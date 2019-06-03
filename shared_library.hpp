@@ -30,6 +30,9 @@
 #include <sys/wait.h>
 
 #include "parse_arguments.hpp"
+#include "Log.h"
+
+using namespace fly;
 
 const int max_sendlen = 32768;
 const int max_recvlen = 32768;

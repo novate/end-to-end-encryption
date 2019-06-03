@@ -8,6 +8,11 @@ void print_help(bool is_client) {
        << (is_client ? " [--num 1~1000]" : "") << std::endl;
 }
 
+Options get_test_arguments() {
+    Options opts;
+    return opts;
+}
+
 Options parse_arguments(int argc, char **argv, bool is_client=false) {
     std::vector<std::string> arguments;
     Options opts;

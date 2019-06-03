@@ -923,9 +923,9 @@ int check_child() {
 
 int loop_client_fork(const Options &opt) {
     pid_t pid;
-    //cur_num: current children process num
+    // cur_num: current children process num
     unsigned int cur_num = 0, conn_num = 0;
-    int rtr;    //return value
+    int rtr;    // return value
     fd_set rfds, wfds;
 
     while(1) {
@@ -939,10 +939,9 @@ int loop_client_fork(const Options &opt) {
             pid = fork();
             if(pid == -1) {
                 graceful("loop_client_fork fork", -20);
-            }
-            //child
-            else if(pid == 0) {
-                //nonblock
+            } else if(pid == 0) {
+                // child
+                // nonblock
                 if(!opt.block) {
                     rtr = 0;
                     while(rtr >= 0) {
@@ -992,17 +991,17 @@ int loop_client_fork(const Options &opt) {
                 //rtr = 1, stage done
                 exit(0); 
             }
-            //father
+            // parent
             else {
                 cur_num ++;
                 conn_num ++;
             }
         }
-        //all connection finished
+        // all connection finished
         else if(conn_num >= opt.num) {
             break;
         }
-        //reach max_active_connections
+        // reach max_active_connections
         else {
             continue;
         }
