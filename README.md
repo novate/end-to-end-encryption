@@ -1,3 +1,11 @@
+# SJ's final work: End to end encryption
+
+## Client: Hard
+
+## Server: Easy
+
+---
+
 # SJ Group Work 3: TCP Socket Integrated Task
 
 ## Makefile Logic
