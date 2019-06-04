@@ -30,7 +30,7 @@
 #include <sys/wait.h>
 
 #include "parse_arguments.hpp"
-#include "Log.h"
+#include "log.hpp"
 
 using namespace fly;
 
@@ -215,3 +215,5 @@ int client_reconnected(const Options &opt);
 // return:
 //      0   reconnection failed 
 //      1   reconnection succeed
+
+int log_init(std::ofstream &log_stream, const std::string log_name, const Level level);

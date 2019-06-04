@@ -1,8 +1,7 @@
-#include "../include/Log.h"
+#include "log.hpp"
 
 namespace fly
 {
-
 
 Log& Log::get()
 {
@@ -32,7 +31,14 @@ Level Log::getLevel()
     return m_logLevel;
 }
 
-
+std::string Log::getTime()
+{
+    time_t now = time(0);
+    char timestamp[100] = "";
+    strftime(timestamp, 100, "%F %T", localtime(&now));
+    std::string cur_time(timestamp);
+    return cur_time;
+}
 
 TeeBuf::TeeBuf(std::streambuf * sb1, std::streambuf * sb2) :
     m_sb1(sb1),
