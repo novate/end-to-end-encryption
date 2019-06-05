@@ -33,7 +33,7 @@
 #include <sys/wait.h>
 
 #include "parse_arguments.hpp"
-#include "Log.h"
+#include "log.hpp"
 
 using namespace fly;
 using namespace std;
@@ -46,4 +46,12 @@ using namespace std;
 // gracefully perror and exit
 inline void graceful(const char *s, int x) { perror(s); exit(x); }
 
+int client_reconnected(const Options &opt);
+//function:
+//      reconnect
+// return:
+//      0   reconnection failed 
+//      1   reconnection succeed
+
+int log_init(std::ofstream &log_stream, const std::string log_name, const Level level);
 #endif // SHARED_LIBRARY_H
