@@ -1,19 +1,18 @@
-#include "shared_library.hpp"
+#include "server_lib.hpp"
 
 using namespace std;
 
-int main(int argc, char *argv[]) {
+const bool is_client = false;
+
+int main(int argc, char *argv[])
+{
     // process arguments
-    Options opt = parse_arguments(argc, argv, false);
+    string fn_conf = is_client ? kFnConfClient : kFnConfServer;
+    ifstream ifs(fn_conf);
+    Options opt = parse_arguments(ifs, is_client);
 
     int listener = get_listener(opt);
-
-    if (opt.fork)
-        loop_server_fork(listener, opt);
-    else
-        loop_server_nofork(listener, opt);
-
-    // how can the loop possibly return?
+    int ret = loop_server(listener, opt);
     close(listener);
-    return 0;
+    return ret;
 }
