@@ -63,9 +63,24 @@ enum class PacketType: uint8_t {
     IPTermRequest = 0x0B,
     IPTermResponse = 0x0B,
 
-    End = 0xFF,
+    End = 0xFF
 };
 
+struct ClientDevInfo {
+    uint16_t cpu;  // MHz, from '/proc/cpuinfo/', 1st CPU
+    uint16_t ram;      // (kB to)MB, from '/proc/meminfo/'
+    uint16_t flash;   // MB
+
+    uint16_t devInnerID;
+    uint8_t groupSeq[16];
+    uint8_t type[16];
+    uint8_t version[16];
+    
+    uint32_t instID;    //'devid' in database
+    uint8_t instInnID;
+
+    uint8_t authstr[32];
+};
 
 class DevInfo {
 private:
@@ -166,20 +181,29 @@ public:
     Client(){
         isConnected = false;
         isVerified = false;
+        gene_dev_info();
     }
 
     int client_communicate(int socketfd, Options opt);
-    vector<uint8_t> client_pack_message(PacketType type);
-    void client_unpack_message(PacketType type);
+
+    void client_pack_message(PacketType type, Options opt);
+    void client_unpack_message(PakcetType type, Options opt);
+
 
     void push_back_uint16(vector<uint8_t> & message, uint16_t data);
     void push_back_uint32(vector<uint8_t> & message, uint32_t data);
-    // dev info
-    DevInfo dev;
-
+    void push_back_array(vector<uint8_t> & message, uint8_t * array, int length);
+    void push_back_screen_info(vector<uint8_t> & message);
+    DevInfo Client::gene_dev_info();
+    
 private:
     // TCP
     int socketfd;
+    vector<uint8_t> send_message;
+    vector<uint8_t> recv_message;
+
+    char send_buffer[1024];
+    char recv_buffer[1024];
 
     //status
     bool isConnected;
@@ -190,6 +214,10 @@ private:
     uint16_t serverMainVersion;
     uint8_t serverSec1Version;
     uint8_t serverSec2Version;
+
+    // dev info
+    ClientDevInfo dev;
+
 };
 
 
