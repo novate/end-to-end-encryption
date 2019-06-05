@@ -75,7 +75,7 @@ struct ClientDevInfo {
     uint8_t groupSeq[16];
     uint8_t type[16];
     uint8_t version[16];
-    
+
     uint32_t instID;    //'devid' in database
     uint8_t instInnID;
 
@@ -189,13 +189,12 @@ public:
     void client_pack_message(PacketType type, Options opt);
     void client_unpack_message(PakcetType type, Options opt);
 
-
     void push_back_uint16(vector<uint8_t> & message, uint16_t data);
     void push_back_uint32(vector<uint8_t> & message, uint32_t data);
     void push_back_array(vector<uint8_t> & message, uint8_t * array, int length);
     void push_back_screen_info(vector<uint8_t> & message);
     DevInfo Client::gene_dev_info();
-    
+
 private:
     // TCP
     int socketfd;
@@ -220,8 +219,7 @@ private:
 
 };
 
-
-int client_communicate(int socketfd, Options opt);
+int client_communicate(Options opt);
 int server_communicate(int socketfd, Options opt);
 
 #endif // COMMUNICATE_H
