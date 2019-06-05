@@ -38,6 +38,7 @@ int client_communicate(Options opt) {
         } else {
             // 开始收发逻辑...
             // 出现以上三种情况，则continue
+            // 收发正确完成，则break
         }
 
     }
