@@ -1,0 +1,36 @@
+  PID  Uid     VmSize Stat Command
+    1 root        276 S   /bin/init 
+    2 root            SW  [keventd]
+    3 root            SWN [ksoftirqd_CPU0]
+    4 root            SW  [kswapd]
+    5 root            SW  [bdflush]
+    6 root            SW  [kupdated]
+    8 root            SW  [mtdblockd]
+    9 root            SW  [khubd]
+   14 root            SW  [common_kthread]
+   17 root            DW  [IxOsal 1]
+  123 1           236 S   portmap 
+  124 root        212 S   /ecomm_user_program/netlink_debug 
+  130 root        780 S   /ecomm_user_program/ipterm 
+  132 root        784 S   /ecomm_user_program/ipproxy 
+  133 root        252 S   /ecomm_user_program/debug_recv 
+  134 root        288 S   /ecomm_user_program/debug_show 
+  135 root        708 S   /ecomm_user_program/manager 
+  136 root        372 S   /ecomm_user_program/usbmng 
+  138 root        364 S   /ecomm_user_program/prnmng 
+  139 root        344 S   /ecomm_user_program/pingmon 
+  140 root        248 S   /ecomm_user_program/checkip 
+  151 root        804 S   zebra -d 
+  152 root        368 S   boa 
+  166 root            SW  [eth_kthread_0]
+  197 root        244 S   /usr/sbin/inetd 
+  215 root       1052 S   tserver [Async1(1) 01:45:31]      
+  217 root       1052 S   tserver [Async2(1) 01:45:31]      
+  220 root       1052 S   tserver [Async3(1) 01:45:31]      
+  224 root       1052 S   tserver [Async4(1) 01:45:31]      
+  227 root       1052 S   tserver [Async5(1) 01:45:30]      
+  229 root       1052 S   tserver [Async6(1) 01:45:30]      
+  233 root       1052 S   tserver [Async7(1) 01:45:30]      
+  235 root       1052 S   tserver [Async8(1) 01:45:30]      
+  369 root        676 S   /bin/sh 
+  371 root        348 R   ps -ef 
