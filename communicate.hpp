@@ -82,6 +82,21 @@ struct DevInfo {
 
 class Client {
 public:
+    Client(){
+        isConnected = false;
+        isVerified = false;
+    }
+
+    int client_communicate(int socketfd, Options opt);
+    vector<uint8_t> client_pack_message(PacketType type);
+    void client_unpack_message(PakcetType type);
+
+    void push_back_uint16(vector<uint8_t> & message, uint16_t data);
+    void push_back_uint32(vector<uint8_t> & message, uint32_t data);
+    // dev info
+    DevInfo dev;
+
+private:
     // TCP
     int socketfd;
 
@@ -92,21 +107,9 @@ public:
     
     // server info
     uint16_t serverMainVersion;
-    uint16_t serverSec1Version;
-    uint16_t serverSec2Version;
-
-    // dev info
-    DevInfo dev;
-
-    Client(){
-        isConnected = false;
-        isVerified = false;
-    }
-private:
-
-
+    uint8_t serverSec1Version;
+    uint8_t serverSec2Version;
 };
 
-int client_communicate(int socketfd, Options opt);
 
 int server_communicate(int socketfd, Options opt);
