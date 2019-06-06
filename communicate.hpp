@@ -223,6 +223,9 @@ private:
     uint16_t rawServerMainVersion;
     uint8_t  rawServerSec1Version;
     uint8_t  rawServerSec2Version;
+    uint8_t  rawPermitEmptyTerminal;
+    uint16_t rawDumbTerFlags;
+    uint16_t rawIPTerFlags;
 
     // dev info
     ClientDevInfo dev;
