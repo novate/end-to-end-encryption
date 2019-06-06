@@ -1,6 +1,6 @@
 /bin
-/.vscode
-/.idea
+.vscode
+.idea
 
 # For C++
 # Prerequisites
