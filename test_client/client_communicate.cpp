@@ -1,121 +1,16 @@
-#include "communicate.hpp"
+#include "client_communicate.hpp"
 
-int log_init(std::ofstream &log_stream, const std::string log_name, const Level level, const bool* const log_env, const bool on_screen, const bool is_trunc) {
-    // log_stream must not be opened before getting into this function.
-    if (log_stream.is_open()) {
-        return -1;
-    }
-	if (is_trunc) {
-		log_stream.open(log_name, ios::out|ios::trunc);
-	}
-    else {
-		log_stream.open(log_name, ios::out|ios::app);
-	}
-    if (!log_stream.is_open()) {
-        return -2;
-    }
-    Log::get().setLogStream(log_stream);
-    Log::get().setLevel(level);
-    Log::get().setEnv(log_env);
-    Log::get().setOnScreen(on_screen);
-    return 0;
-}
-
-std::string logify_data(const uint8_t* data, const int len) {
-    std::stringstream ss, ss_word;
-    // ss_word.str(std::string());
-    int i;
-    for (i = 0; i < len; i++) {
-        if (i % 16 == 0) {
-            ss << ss_word.str() << std::endl;
-            ss_word.clear();    //clear any bits set
-            ss_word.str(std::string());
-            ss << ' ' << setw(4) << setfill('0') << hex << uppercase << i << ": ";
-        }
-        else if (i % 8 == 0) {
-            ss << "- ";
-        }
-        ss << setw(2) << setfill('0') << hex << uppercase << +data[i] << ' ';
-        // print printable char.
-        char ch = (data[i] > 31 && data[i] < 127) ? data[i] : '.';
-        ss_word << ch;
-        // ss_word << data[i];
-    }  
-    if (i%16==0){
-        ss << setw(0) << ss_word.str();
-    }
-    else {
-        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
-        // cout << "i: " << i << ", interval: " << interval << endl;
-        ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
-    }
-    return ss.str();
-}
-
-void encrypt_auth(u_int& random_num, u_int& svr_time, uint8_t* auth, const int length) {
-    svr_time = (u_int)time(0);
-    svr_time = svr_time ^ (u_int)0xFFFFFFFF;
-    srand(svr_time);
-    random_num = (u_int)rand();
-    int pos = random_num % 4093;
-    for (int i = 0; i < length; i++) {
-        auth[i] = auth[i] ^ kSecret[pos];
-        pos = (pos+1)%4093;
-    }
-}
-
-bool decrypt_auth(const u_int random_num, uint8_t* auth, const int length) {
-	const uint8_t c_auth[33] = "yzmond:id*str&to!tongji@by#Auth^";
-    int pos = random_num % 4093;
-    for (int i = 0; i < length; i++) {
-        auth[i] = auth[i] ^ kSecret[pos];
-		if (i > length-32 && auth[i] != c_auth[i-length+32]) {
-			return false;
-		}
-        pos = (pos+1)%4093;
-    }
-	return true;
-}
-
-void create_random_str(uint8_t* random_string, const int length) {
-    uint8_t *p = new uint8_t[length];
-    srand((unsigned)time(NULL));
-    for(int i = 0; i < length; i++) {
-        p[i] = rand() % 256;
-    }
-    memcpy(random_string, p, length);
-    delete[] p;
-    return;
-}
-
-// return size of the file, if open file error, return 0.
-// must read no more than maxLength(8191/4095) bytes.
-int read_dat(const std::string dat_name, char* result, int maxLength) {
-	ifstream ifs;
-	ifs.open(dat_name, std::ifstream::in);
-	if (!ifs.is_open()) {
-		return -1;
-	}
-	// read no more than 8191 bytes.
-	ifs.seekg(0, std::ios::end);
-	int length = ifs.tellg();
-	length = length > maxLength ? maxLength : length;
-	ifs.seekg(0, std::ios::beg);
-	ifs.read(result, length);
-	ifs.close();
-	return length;
-}
-
-// TODO: Is this necessary?
-DevInfo Server::gene_dev_info() {
+// DevInfo Client::gene_dev_info() {
+void Client::gene_dev_info(int devid) {
     dev.cpu = 2600;
     dev.ram = 1846;
     dev.flash = 3723;
     
-    srand((unsigned)time(NULL));
+    srand((unsigned)time(nullptr));
     //'devid' in database
     //TODO: need unique instID(devid)! and I'm not doing this.
-    dev.instID = rand() % 512;
+    // dev.instID = rand() % 512;
+    dev.instID = devid;
     dev.instInnID = 1;
 
     dev.devInnerID = rand() % 256;
@@ -125,32 +20,41 @@ DevInfo Server::gene_dev_info() {
     create_random_str(dev.groupSeq, 16);
     create_random_str(dev.type, 16);
     create_random_str(dev.version, 16);
-    return dev;
+
+    // for(int i = 0; i < 256; i++)
+    //     dev.IPTermMap[i] = (uint8_t)0;
+    // return dev;
 }
 
-void Server::push_back_array(vector<uint8_t> & message, uint8_t * array, int length) {
+void Client::push_back_array(vector<uint8_t> & message, uint8_t * array, int length) {
     for(int i=0; i<length; i++) {
         message.push_back(array[i]);
     }
     return;
 }
 
-void Server::push_back_uint16(vector<uint8_t> & message, uint16_t data) {
-    auto var16 = inet_htons(data);
-    message.push_back((uint8_t)(var16>>8));
-    message.push_back((uint8_t)(var16));
+void Client::push_back_uint16(vector<uint8_t> & message, uint16_t data) {
+    // auto var16 = htons(data);
+    // message.push_back((uint8_t)(var16>>8));
+    // message.push_back((uint8_t)(var16));
+    message.push_back((uint8_t)(data>>8));
+    message.push_back((uint8_t)(data));
 }
 
-void Server::push_back_uint32(vector<uint8_t> & message, uint32_t data) {
-    auto var32 = inet_htonl(data);
-    message.push_back((uint8_t)(var32>>24));
-    message.push_back((uint8_t)(var32>>16));
-    message.push_back((uint8_t)(var32>>8));
-    message.push_back((uint8_t)(var16));
+void Client::push_back_uint32(vector<uint8_t> & message, uint32_t data) {
+    // auto var32 = htonl(data);
+    // message.push_back((uint8_t)(var32>>24));
+    // message.push_back((uint8_t)(var32>>16));
+    // message.push_back((uint8_t)(var32>>8));
+    // message.push_back((uint8_t)(var32));
+    message.push_back((uint8_t)(data>>24));
+    message.push_back((uint8_t)(data>>16));
+    message.push_back((uint8_t)(data>>8));
+    message.push_back((uint8_t)(data));
     return;
 }
 
-void Server::pop_first_array(vector<uint8_t> & message, uint8_t * array, int length) {
+void Client::pop_first_array(vector<uint8_t> & message, uint8_t * array, int length) {
     for(int i=0; i<length; i++) {
         array[i] = message.front();
         message.erase(message.begin());
@@ -158,78 +62,67 @@ void Server::pop_first_array(vector<uint8_t> & message, uint8_t * array, int len
     return;
 }
 
-void Server::pop_first_uint8(vector<uint8_t> & message, uint8_t& data) {
+void Client::pop_first_uint8(vector<uint8_t> & message, uint8_t& data) {
     data = message.front();
     message.erase(message.begin());
 }
 
-void Server::pop_first_uint16(vector<uint8_t> & message, uint16_t& data) {
-    uint8_t raw[2];
-    raw[1] = message.front();
+void Client::pop_first_uint16(vector<uint8_t> & message, uint16_t& data) {
+    data = message.front();
     message.erase(message.begin());
-    raw[2] = message.front();
+    data = data << 8;
+    data += message.front();
     message.erase(message.begin());
-    memcpy(&data, sizeof(data), raw, 2);
-    data = inet_ntohs(data);
+    // data = ntohs(data);
 }
 
-void Server::pop_first_uint32(vector<uint8_t> & message, uint32_t& data) {
-    uint8_t raw[4];
-    raw[1] = message.front();
+void Client::pop_first_uint32(vector<uint8_t> & message, uint32_t& data) {
+    data = message.front();
     message.erase(message.begin());
-    raw[2] = message.front();
+    data = data << 8;
+    data += message.front();
     message.erase(message.begin());
-    raw[3] =message.front();
+    data = data << 8;
+    data += message.front();
     message.erase(message.begin());
-    raw[4] = message.front();
+    data = data << 8;
+    data += message.front();
     message.erase(message.begin());
-    memcpy(&data, sizeof(data), raw, 4);
-    data = inet_ntohl(data);
+    // data = ntohl(data);
 }
 
-// TODO: Is this necessary?
-void Server::push_back_screen_info(vector<uint8_t> & message) {
+void Client::push_back_screen_info(vector<uint8_t> & message, const uint8_t screen_num) {
     //screen 
-    message.push_back((uint8_t)(1 + rand() % 16));
+    message.push_back((uint8_t)screen_num);
     //pad
     message.push_back((uint8_t)0x00);
     //remote server port
-    //TODO: HOW TO GET REMOTE PORT??
-    push_back_uint16(message, (uint16_t)12350);
+    push_back_uint16(message, (uint8_t)rawIPTerFlags);
     //remote server ip
-    //TODO: HOW TO GET REMOTE IP??
-    uint32_t ip = (uint32_t)inet_aton("192.168.0.0");
+    uint32_t ip = (uint32_t)inet_aton("192.168.80.2", nullptr);
     message.push_back((uint8_t)ip >> 24);
     message.push_back((uint8_t)ip >> 16);
     message.push_back((uint8_t)ip >> 8);
     message.push_back((uint8_t)ip);
 
     //proto
-    string prot = "ä¸“ç”¨SSH";
-    const char tp[12] = {0};
-    tp = prot.c_str();
-    push_back_array(message, (uint8_t *)tp, 12);
+    uint8_t tp1[12] = "×¨ÓÃSSH";
+    push_back_array(message, (uint8_t *)tp1, 12);
 
     //screen state
-    string state = "å·²ç™»å½•";
-    const char tp[8] = {0};
-    tp = prot.c_str();
-    push_back_array(message, (uint8_t *)tp, 8);
+    uint8_t tp2[8] = "ÒÑµÇÂ¼";
+    push_back_array(message, (uint8_t *)tp2, 8);
   
     //screen prompt
-    string promp = "å‚¨è“„ç³»ç»Ÿ";
-    const char tp[24] = {0};
-    tp = promp.c_str();
-    push_back_array(message, (uint8_t *)tp, 24);
+    uint8_t tp3[24] = "´¢ĞîÏµÍ³";
+    push_back_array(message, (uint8_t *)tp3, 24);
 
     //tty type
-    string ttyType = "vt100";
-    const char tp[12] = {0};
-    tp = ttyType.c_str();
-    push_back_array(message, (uint8_t *)tp, 12);
+    uint8_t tp4[12] = "vt100";
+    push_back_array(message, (uint8_t *)tp4, 12);
 
     //system time 
-    push_back_uint32(message, (uint32_t)time(NULL));
+    push_back_uint32(message, (uint32_t)time(nullptr));
 
     //statics
     push_back_uint32(message, (uint32_t)rand() % 1000000);
@@ -244,8 +137,7 @@ void Server::push_back_screen_info(vector<uint8_t> & message) {
     
 }
 
-// TODO: Rewrite it symmetrically as client_pack message.
-void Server::server_unpack_message(Options opt) {
+bool Client::client_pack_message(PacketType type, const Options & opt) {
     vector<uint8_t> message;
     
     //head
@@ -255,6 +147,7 @@ void Server::server_unpack_message(Options opt) {
 
     switch(type) {
         case PacketType::VersionRequire:
+        {
             //packet length
             push_back_uint16(message, (uint16_t)12);
             //0x0000
@@ -267,9 +160,10 @@ void Server::server_unpack_message(Options opt) {
             message.push_back(serverSec1Version);
             //sec 2 version
             message.push_back(serverSec2Version);
+        }
             break;
-
         case PacketType::AuthResponse:
+        {
             //packet length
             push_back_uint16(message, (uint16_t)116);
             //0x0000
@@ -301,8 +195,8 @@ void Server::server_unpack_message(Options opt) {
             push_back_uint32(message, dev.instID);
             //instInnID
             message.push_back(dev.instInnID);
-            //2 bytes pad
-            for(int ip = 0; ip < 2; ip++) {
+            //3 bytes pad
+            for(int ip = 0; ip < 3; ip++) {
                 message.push_back((uint8_t)0);
             }
 
@@ -319,8 +213,9 @@ void Server::server_unpack_message(Options opt) {
 
             int n = tmp.size();
             if(n != 72) {
-                LOG(Level::Error) << "Descriptor: 0x91" << endl
-                    << "PacketType: 0x01" << endl << "the bit num from CPU to AuthStr is not 72!!" << endl;
+                LOG(Level::ERR) << "Descriptor: 0x91" << endl
+                    << "PacketType: 0x01" << endl << "data length from CPU to AuthStr is not 72!!" 
+                        << "data length = "  << n << endl;
                     return false;
             }
             for(int i = 0; i < 72; i++) {
@@ -335,7 +230,6 @@ void Server::server_unpack_message(Options opt) {
             u_int random_num=0, svr_time=0;
             encrypt_auth(random_num, svr_time, tpdata, 104);
 
-            
             it = message.begin() + 8;
             for(int i = 0; i < 72; i++) {   // replace old 72 bytes
                 message[i+8] = tpdata[i];
@@ -347,9 +241,11 @@ void Server::server_unpack_message(Options opt) {
 
             //random num
             push_back_uint32(message, (uint32_t)random_num);
+        }
             break;
 
         case PacketType::SysInfoResponse:
+        {
             //packet length
             push_back_uint16(message, (uint16_t)28);
             //0x0000
@@ -366,9 +262,11 @@ void Server::server_unpack_message(Options opt) {
             push_back_uint32(message, (uint32_t)5101426);
             //freed memory
             push_back_uint32(message, (uint32_t)2696);
+        }
             break;
 
         case PacketType::ConfInfoResponse:
+        {
             //load config.dat
             char * read_file = new char[8192];
             string file_name = "config.dat";
@@ -392,9 +290,11 @@ void Server::server_unpack_message(Options opt) {
 
             //config info
             push_back_array(message, (uint8_t *)read_file, size);
+        }
             break;
 
         case PacketType::ProcInfoResponse:
+        {
             //load config.dat
             char * read_file = new char[8192];
             string file_name = "process.dat";
@@ -418,9 +318,11 @@ void Server::server_unpack_message(Options opt) {
 
             //config info
             push_back_array(message, (uint8_t *)read_file, size);      
+        }
             break;
         
         case PacketType::USBfileResponse:
+        {
             //load usefile.dat
             char * read_file = new char[8192];
             string file_name = "usefile.dat";
@@ -444,9 +346,11 @@ void Server::server_unpack_message(Options opt) {
 
             //config info
             push_back_array(message, (uint8_t *)read_file, size); 
+        }
             break;
         
         case PacketType::PrintQueueResponse:
+        {
             //packet length
             push_back_uint16(message, (uint16_t)9);
             //0x0000
@@ -454,10 +358,12 @@ void Server::server_unpack_message(Options opt) {
             //data length
             push_back_uint16(message, (uint16_t)1);
 
-            message.push_back((uint8_t)0);                 
+            message.push_back((uint8_t)0);    
+        }             
             break;
         
         case PacketType::TerInfoResponse:
+        {
             uint8_t ttyInfoMap[270] = {0};    //dumb+IP terminal map
             
             // for(int i = 0; i < 16; i++) {
@@ -465,10 +371,10 @@ void Server::server_unpack_message(Options opt) {
             // }   //no dumb terminal
 
             //TODO: get max&min tty amount from Options
-            int maxTNum = stoi(opt.at["æœ€å¤§é…ç½®ç»ˆç«¯æ•°é‡"]);
-            int minTNum = stoi(opt.at["æœ€å°é…ç½®ç»ˆç«¯æ•°é‡"]);
-            LOG(Level::Debug) << "max tty amount = " << maxSNum << endl;
-            LOG(Level::Debug) << "min tty amount = " << minSNum << endl;
+            int maxTNum = stoi(opt.at("×î´óÅäÖÃÖÕ¶ËÊıÁ¿"));
+            int minTNum = stoi(opt.at("×îĞ¡ÅäÖÃÖÕ¶ËÊıÁ¿"));
+            LOG(Level::Debug) << "max tty amount = " << maxTNum << endl;
+            LOG(Level::Debug) << "min tty amount = " << minTNum << endl;
             
             int total = minTNum + rand() % (maxTNum - minTNum + 1);
             int async_term_num = 0; 
@@ -481,6 +387,7 @@ void Server::server_unpack_message(Options opt) {
                     randPos = rand() % 254;
                 }
                 ttyInfoMap[16 + randPos] = 1;
+                // dev.IPTermMap[randPos] = (uint8_t)1;
             }
 
             //16 dumb-terminal, 254 ip-terminal, 2 bytes tty num
@@ -494,11 +401,13 @@ void Server::server_unpack_message(Options opt) {
             push_back_array(message, ttyInfoMap, 270);
             //tty configed
             push_back_uint16(message, (uint16_t)(total + rand() % (270-total) ));
+        }
             break;
 
         case PacketType::DumbTerResponse:
-            int maxSNum = stoi(opt.at["æ¯ä¸ªç»ˆç«¯æœ€å¤§è™šå±æ•°é‡"]);
-            int minSNum = stoi(opt.at["æ¯ä¸ªç»ˆç«¯æœ€å°è™šå±æ•°é‡"]);
+        {
+            int maxSNum = stoi(opt.at("Ã¿¸öÖÕ¶Ë×î´óĞéÆÁÊıÁ¿"));
+            int minSNum = stoi(opt.at("Ã¿¸öÖÕ¶Ë×îĞ¡ĞéÆÁÊıÁ¿"));
             LOG(Level::Debug) << "max screen num = " << maxSNum << endl;
             LOG(Level::Debug) << "min screen num = " << minSNum << endl;
 
@@ -511,10 +420,15 @@ void Server::server_unpack_message(Options opt) {
             push_back_uint16(message, (uint16_t)(1 + rand() % 16));
             //data length
             push_back_uint16(message, (uint16_t)(28 + screenNum*96));
+
             //port
-            message.push_back((uint8_t)(1 + rand() % 254) );
+            // message.push_back((uint8_t)(1 + rand() % 254) );
+            message.push_back(rawIPTerFlags);
+
             //asigned port
-            message.push_back((uint8_t)(1 + rand() % 254) );
+            message.push_back(rawIPTerFlags);
+            
+            // message.push_back((uint8_t)(1 + rand() % 254) );
             //active screen
             message.push_back(activeScreen);
             //screen numv
@@ -524,27 +438,24 @@ void Server::server_unpack_message(Options opt) {
             push_back_uint32(message, (uint32_t)0);
 
             //tty type
-            string ttyType = "ä¸²å£ç»ˆç«¯";
-            const char tp[12] = {0};
-            tp = ttyType.c_str();
-            push_back_array(message, (uint8_t *)tp, 12);
+            uint8_t tp5[12] = "´®¿ÚÖÕ¶Ë";
+            push_back_array(message, (uint8_t *)tp5, 12);
             
             //tty state
-            string ttyState = "æ­£å¸¸";
-            memset(tp, 0, 12);
-            tp = ttyState.c_str();
-            push_back_array(message, (uint8_t *)tp, 8);
+            uint8_t tp6[8] = "Õı³£";
+            push_back_array(message, (uint8_t *)tp6, 8);
 
             //screen info
-            for(int i = 0; i < screenNum; i++) {
-                push_back_screen_info(message);
+            for(uint8_t i = 1; i <= screenNum; i++) {
+                push_back_screen_info(message, i);
             }
-
+        }
             break;
 
         case PacketType::IPTermResponse:
-            int maxSNum = stoi(opt.at["æ¯ä¸ªç»ˆç«¯æœ€å¤§è™šå±æ•°é‡"]);
-            int minSNum = stoi(opt.at["æ¯ä¸ªç»ˆç«¯æœ€å°è™šå±æ•°é‡"]);
+        {
+            int maxSNum = stoi(opt.at("Ã¿¸öÖÕ¶Ë×î´óĞéÆÁÊıÁ¿"));
+            int minSNum = stoi(opt.at("Ã¿¸öÖÕ¶Ë×îĞ¡ĞéÆÁÊıÁ¿"));
             LOG(Level::Debug) << "max screen num = " << maxSNum << endl;
             LOG(Level::Debug) << "min screen num = " << minSNum << endl;
 
@@ -553,52 +464,50 @@ void Server::server_unpack_message(Options opt) {
 
             //packet length
             push_back_uint16(message, (uint16_t)(8 + 28 + screenNum*96));
-            //0x0000
-            push_back_uint16(message, (uint16_t)0x0000);
+            //rawIPTerFlags
+            push_back_uint16(message, (uint16_t)rawIPTerFlags);
             //data length
             push_back_uint16(message, (uint16_t)(28 + screenNum*96));
             //port
-            message.push_back((uint8_t)(1 + rand() % 254) );
+            message.push_back((uint8_t)rawIPTerFlags);
             //asigned port
-            message.push_back((uint8_t)(1 + rand() % 254) );
+            message.push_back((uint8_t)rawIPTerFlags);
             //active screen
             message.push_back(activeScreen);
             //screen numv
             message.push_back(screenNum);
 
             //tty addr
-            uint32_t ip = (uint32_t)inet_aton("192.168.80.2");
+            uint32_t ip = (uint32_t)inet_aton("192.168.80.2", nullptr);
             message.push_back((uint8_t)ip >> 24);
             message.push_back((uint8_t)ip >> 16);
             message.push_back((uint8_t)ip >> 8);
             message.push_back((uint8_t)ip);
 
             //tty type
-            string ttyType = "IPç»ˆç«¯";
-            const char tp[12] = {0};
-            tp = ttyType.c_str();
-            push_back_array(message, (uint8_t *)tp, 12);
+            uint8_t tp7[12] = "IPÖÕ¶Ë";
+            push_back_array(message, (uint8_t *)tp7, 12);
             
             //tty state
-            string ttyState = "èœå•";
-            memset(tp, 0, 12);
-            tp = ttyState.c_str();
-            push_back_array(message, (uint8_t *)tp, 8);
+            uint8_t tp8[8] = "²Ëµ¥";
+            push_back_array(message, (uint8_t *)tp8, 8);
 
             //screen info
-            for(int i = 0; i < screenNum; i++) {
-                push_back_screen_info(message);
+            for(uint8_t i = 1; i <= screenNum; i++) {
+                push_back_screen_info(message, i);
             }
-
+        }
             break;
         
         case PacketType::End:
+        {
             //packet length
-            push_back_uint16(message, (uint16_t)8;
+            push_back_uint16(message, (uint16_t)8);
             //0x0000
             push_back_uint16(message, (uint16_t)0x0000);
             //data length
-            push_back_uint16(message, (uint16_t)0);            
+            push_back_uint16(message, (uint16_t)0);      
+        }      
             break;
         default:
             break;
@@ -608,104 +517,294 @@ void Server::server_unpack_message(Options opt) {
     return true;
 }
 
-// TODO: Rewrite it symmetrically as client_unpack message.
-bool Server::server_pack_message(PacketType type, Options opt) {
-    vector<uint8_t> message;
+bool Client::client_unpack_message(const int socketfd, const Options & opt) {
+    vector<uint8_t> message = recv_message;
 
-    //head
-    message.push_back((uint8_t)0x91);
-    //descriptor
-    message.push_back((uint8_t)type);
+    uint8_t front;
+    pop_first_uint8(message, front);
+    if(front != 0x11) {
+        LOG(Level::ERR) << "´Ó·şÎñÆ÷ÊÕµ½µÄ°üµÄ°üÍ·´íÎó£¬ÊÕµ½µÄ°üÍ·Îª£º " << front << endl;
+        return false;
+    }
 
-    switch(type) {
+    pop_first_uint8(message, recvPacketType);
+    sendPacketType = recvPacketType;
+
+    switch(static_cast<PacketType>(recvPacketType)) {
         case PacketType::AuthRequest:
-            //packet length
-            push_back_uint16(message, (uint16_t)60);
-            //padding
-            push_back_uint16(message, (uint16_t)0x0000);
-            //data length
-            push_back_uint16(message, (uint16_t)52);
-            //main version
-            push_back_uint16(message, (uint16_t)3);
-            //sec 1 version
-            message.push_back((uint8_t)0);
-            //sec 2 version
-            message.push_back((uint8_t)0);
-            // è®¾å¤‡è¿æ¥é—´éš”
-            push_back_uint16(message, static_cast<uint16_t>(stoi(opt.at["è®¾å¤‡è¿æ¥é—´éš”"]));
-            // è®¾å¤‡é‡‡æ ·é—´éš”
-            push_back_uint16(message, static_cast<uint16_t>(stoi(opt.at["è®¾å¤‡é‡‡æ ·é—´éš”"]));
-            // æ˜¯å¦å…è®¸ç©ºç»ˆç«¯ï¼Œå¼ºåˆ¶ä¸º1
-            message.push_back((uint8_t)1);
-            message.push_back((uint8_t)0);
-            push_back_uint16(message, (uint16_t)0);
-            // server_auth, random_num, svr_time
-            uint8_t server_auth[33] = "yzmond:id*str&to!tongji@by#Auth^";
-            u_int random_num=0, svr_time=0;
-            encrypt_auth(random_num, svr_time, auth, 32);
-            push_back_array(message, server_auth, 32);
-            push_back_uint32(message, static_cast<uint32_t>(random_num));
-            push_back_uint32(message, static_cast<uint32_t>(svr_time));
-            return true;
-        // TODO    
+        {
+            uint16_t total_length;
+            pop_first_uint16(message, total_length);
+            uint16_t padding16;
+            pop_first_uint16(message, padding16);
+            uint16_t data_length;
+            pop_first_uint16(message, data_length);
+            pop_first_uint16(message, rawServerMainVersion);
+            pop_first_uint8(message, rawServerSec1Version);
+            pop_first_uint8(message, rawServerSec2Version);
+            if (rawServerMainVersion < 0x02) {
+                LOG(Level::ERR) << "·şÎñÆ÷°æ±¾ºÅ²»·ûºÏÒªÇó£¬·şÎñÆ÷°æ±¾Îª£º" 
+                    << rawServerMainVersion << "." << rawServerSec1Version << "." << rawServerSec2Version << "."<< endl;
+                //reply: versionRequire
+                client_pack_message(PacketType::VersionRequire, opt);
+                send_msg(socketfd);
+                //wait for server to close TCP connection
+                return true;
+            }
+            pop_first_uint16(message, rawFailInterval);
+            pop_first_uint16(message, rawAnotherInterval);
+            pop_first_uint8(message, rawPermitEmptyTerminal);
+            uint8_t padding8;
+            pop_first_uint8(message, padding8);
+            pop_first_uint16(message, padding16);
+            uint8_t server_auth[32];
+            pop_first_array(message, server_auth, 32);
+            uint32_t random_num, svr_time;
+            pop_first_uint32(message, random_num);
+            pop_first_uint32(message, svr_time);
+            // LOG(Level::Debug) << "server_auth: \n" << logify_data(server_auth, 32) << endl;
+            if (decrypt_auth(random_num, server_auth, 32) == false) {
+                LOG(Level::ERR) << "·şÎñÆ÷ÈÏÖ¤´íÎó" << endl;
+                LOG(Level::ERR) << hex << random_num << endl;
+                return false;
+            }
+            else {
+                LOG(Level::ENV) << "·şÎñÆ÷ÈÏÖ¤Í¨¹ı" << endl;
+                return true;
+            }
+        }
         case PacketType::SysInfoRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚ç³»ç»Ÿä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóÏµÍ³ĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::ConfInfoRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚é…ç½®ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóÅäÖÃĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::ProcInfoRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚è¿›ç¨‹ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇó½ø³ÌĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::EtherInfoRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚ä»¥å¤ªç½‘å£ä¿¡æ¯" << endl;
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóÒÔÌ«Íø¿ÚĞÅÏ¢" << endl;
             return true;
         case PacketType::USBInfoRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚USBå£ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóUSB¿ÚĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::USBfileRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚Uç›˜ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóUÅÌĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::PrintDevRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚æ‰“å°å£ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇó´òÓ¡¿ÚĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::PrintQueueRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚æ‰“å°é˜Ÿåˆ—ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇó´òÓ¡¶ÓÁĞĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::TerInfoRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚ç»ˆç«¯æœåŠ¡ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóÖÕ¶Ë·şÎñĞÅÏ¢" << endl;
             return true;
+        }
         case PacketType::DumbTerRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚å“‘ç»ˆç«¯ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóÑÆÖÕ¶ËĞÅÏ¢" << endl;
+            uint16_t padding;
+            pop_first_uint16(message, padding);
             pop_first_uint16(message, rawDumbTerFlags);
             return true;
+        }
         case PacketType::IPTermRequest:
-            LOG(Level::ENV) << "æœåŠ¡å™¨è¯·æ±‚IPç»ˆç«¯ä¿¡æ¯" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÇëÇóIPÖÕ¶ËĞÅÏ¢" << endl;
+            uint16_t padding;
+            pop_first_uint16(message, padding);
             pop_first_uint16(message, rawIPTerFlags);
             return true;
+        }
         case PacketType::End:
-            LOG(Level::ENV) << "æœåŠ¡å™¨æç¤ºå·²æ”¶åˆ°å…¨éƒ¨åŒ…" << endl;
+        {
+            LOG(Level::ENV) << "·şÎñÆ÷ÌáÊ¾ÒÑÊÕµ½È«²¿°ü" << endl;
             return true;
+        }
         default:
-            LOG(Level::ERR) << "ä¸å¯è¢«è¯†åˆ«çš„åŒ…ç±»å‹" << endl;
+        {
+            LOG(Level::ERR) << "²»¿É±»Ê¶±ğµÄ°üÀàĞÍ" << endl;
             return false;
+        }
     }
 }
 
-// TODO: now just pseudo.
-int Server::server_communicate(int socketfd, Options opt) {
-    srand((unsigned)time(NULL));
+int Client::recv_msg(int socketfd) {
+    int n;
+    uint8_t head[8];
+    //recv head
+    if((n = recv(socketfd, head, 8, 0)) == -1) {
+        LOG(Level::ERR) << "recv head return error!" << endl;
+        return false;
+    }
+    if(n == 0) {
+        LOG(Level::ENV) << "remote server has closed connection." << endl;
+        return false;
+    }
+    if(n != 8) {
+        LOG(Level::ERR) << "recved incorrect head length! Expected: 8 "
+            << "recved: " << n << endl;
+        return false;       
+    }
     
-    //block
-    recv();
-    client_unpack_message();
-    while(recvPakcet != PacketType::End) {
-        //recv & send message
-        client_pack_message();
-        send();
-        recv();
-        client_unpack_message();
+    recvPacketType = head[1];
+
+    //recv data
+    uint16_t * pt;
+    pt = (uint16_t*)&head[6];
+    int dataLength = (int)ntohs(*pt);
+    if(dataLength > 0) {
+        if((n = recv(socketfd, recv_buffer, dataLength, 0)) == -1) {
+            LOG(Level::ERR) << "recv packet data return error!" << endl;
+            return false;
+        }
+        if(n == 0) {
+            LOG(Level::ENV) << "remote server has closed connection." << endl;
+            return false;
+        }       
+        if(n != dataLength) {
+            LOG(Level::ERR) << "recved incorrect data length! Expected: " << dataLength
+                << "recved: " << n << endl;
+            return false;       
+        }
+    } //end of if
+
+    vector<uint8_t>().swap(recv_message);
+    if(recv_message.size() != 0) {
+        LOG(Level::Debug) << "clear vector failed." << endl;
+        return false;
     }
 
-    return 0;
+    for(int i = 0; i < 8; i++) {
+        recv_message.push_back(head[i]);
+    }
+    for(int i = 0; i < dataLength; i++) {
+        recv_message.push_back(recv_buffer[i]);
+    }
+
+    return true;
+}
+
+int Client::send_msg(int socketfd) {
+    //send head
+    int n;
+    uint8_t head[8];
+    for(int i = 0; i < 8; i++) {
+        head[i] = send_message[i];
+    }
+    send_message.erase(send_message.begin(), send_message.begin()+8);
+    
+    if((n = send(socketfd, head, 8, 0)) == -1) {
+        LOG(Level::ERR) << "send head return error!" << endl;
+        return false;
+    }
+    if(n == 0) {
+        LOG(Level::ENV) << "remote server has closed connection." << endl;
+        return false;
+    }
+    if(n != 8) {
+        LOG(Level::ERR) << "sent incorrect head length! Expected: 8 "
+            << "sent: " << n << endl;
+        return false;       
+    }
+
+    //send data
+    vector<uint8_t>::iterator it;
+    int pos = 0;
+    for(it = send_message.begin(); it != send_message.end(); it++) {
+        send_buffer[pos++] = *it;
+    }
+
+    send_message.erase(send_message.begin(), send_message.end());
+    if(send_message.size() != 0) {
+        LOG(Level::Debug) << "clear vector failed." << endl;
+        return false;
+    }
+
+    uint16_t * pt;
+    pt = (uint16_t*)&head[6];
+    int dataLength = (int)htons(*pt);
+    if(dataLength > 0) {
+        if((n = send(socketfd, send_buffer, dataLength, 0)) == -1) {
+            LOG(Level::ERR) << "send packet data return error!" << endl;
+            return false;
+        }
+        if(n == 0) {
+            LOG(Level::ENV) << "remote server has closed connection." << endl;
+            return false;
+        }       
+        if(n != dataLength) {
+            LOG(Level::ERR) << "sent incorrect data length! Expected: " << dataLength
+                << "sent: " << n << endl;
+            return false;       
+        }
+    } //end of if
+
+    return true;
+}
+
+int Client::client_communicate(int socketfd, const Options & opt) {
+    srand((unsigned)time(nullptr));
+
+    //TODO: connect to server
+
+
+    if(recv_msg(socketfd) == true) {
+        LOG(Level::ENV) << "recved buffer from server. " << endl;
+    }
+    else {
+        //TODO: disconnect
+    }
+
+    u_int raw_unpack_size = recv_message.size();
+    uint8_t *raw_unpack = new uint8_t[raw_unpack_size];
+    for (u_int i = 0; i < raw_unpack_size; i++) {
+        raw_unpack[i] = recv_message[i];
+    }
+    LOG(Level::RDATA) << "ÊÕµ½Êı¾İÎª£º\n" << logify_data(raw_unpack, raw_unpack_size) << endl;
+    client_unpack_message(socketfd, opt);
+
+    while(static_cast<PacketType>(recvPacketType) != PacketType::End) {
+        client_pack_message(static_cast<PacketType>(sendPacketType), opt);
+        u_int raw_pack_size = send_message.size();
+        uint8_t *raw_pack = new uint8_t[raw_pack_size];
+        for (u_int i = 0; i < raw_pack_size; i++) {
+            raw_pack[i] = send_message[i];
+        }
+        LOG(Level::SDATA) << "·¢ËÍÊı¾İÎª£º\n" << logify_data(raw_pack, raw_pack_size) << endl;
+        
+        if(send_msg(socketfd) == true) {
+            LOG(Level::ENV) << "½«»º³åÇøÄÚÈİ·¢ËÍ¸ø·şÎñÆ÷" << endl;
+        }
+        else {
+            //TODO: disconnect
+        }
+        
+        if(recv_msg(socketfd) == true) {
+            LOG(Level::ENV) << "´Ó·şÎñÆ÷ÊÕµ½Êı¾İ" << endl;
+        }
+        else {
+            //TODO: disconnect
+        }
+        
+        client_unpack_message(socketfd, opt);
+    }
+
+    return true;
 }
