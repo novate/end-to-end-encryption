@@ -1,3 +1,7 @@
+/bin
+/.vscode
+/.idea
+
 # For C++
 # Prerequisites
 *.d
@@ -85,9 +89,3 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-.vscode/c_cpp_properties.json
-.vscode/ipch/34a60a0aab6b9ec4/mmap_address.bin
-.vscode/ipch/34a60a0aab6b9ec4/TEST_LOG.ipch
-.vscode/ipch/c50032bd7ef9fb97/mmap_address.bin
-.vscode/ipch/f4388feb4e3e4e7b/mmap_address.bin
-*.json

@@ -18,6 +18,10 @@ all: $(TARGET_SERVER) $(TARGET_CLIENT)
 
 test: $(TARGET_TEST_LOG)
 
+client:
+	g++ -std=c++11 -Wall -Wextra -o client \
+		client.cpp client_lib.cpp communicate.cpp parse_arguments.cpp
+
 $(TARGET_SERVER): $(SRC_SERVER) $(OBJ_LIB) $(HEADER_LIB)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 

@@ -1,9 +1,13 @@
-#ifndef COMMUNICATE_H
-#define COMMUNICATE_H
-
-#include "shared_library.hpp"
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+#include "log.hpp"
 
 using namespace std;
+using namespace fly;
 
 const u_char kSecret[4096]={
 	0x8b, 0xd6, 0xee, 0xeb, 0x1b, 0x60, 0xbb, 0xf3, 0xbe, 0xa1, 0x31, 0xe7, 0xd9, 0x92, 0x2d, 0x88, 
@@ -262,288 +266,151 @@ const u_char kSecret[4096]={
 	0x50, 0x73, 0x16, 0x0e, 0xbb, 0x5a, 0x0f, 0x42, 0xb5, 0x66, 0xf5, 0x06, 0x14, 0x74, 0xaf, 0x14, 
 	0xc6, 0xdd, 0x6c, 0xa2, 0x17, 0xe9, 0x92, 0xda, 0x04, 0x35, 0xed, 0x48, 0xf6, 0x77, 0x4f, 0x47, 
 	0xea, 0x65, 0x55, 0xa5, 0xbf, 0x64, 0xe7, 0x75, 0xca, 0xdc, 0x7b, 0xde, 0x51, 0x2a, 0xf2, 0x17, 
-	};
-
-class Socket {
-    // public:
-    //     Socket(int socketfd)
-    //     : socketfd(socketfd)
-    //     {
-    //     }
-
-    //     int socketfd;
-    //     bool has_been_active = false;
-    //     int stage = 1;
-    //     int bytes_processed = 0;
-
-    //     int stuNo = 0;
-    //     int pid = 0;
-    //     int random = 0;
-    //     char time_str[time_str_length] = {0};
-    //     unsigned char client_string[buffer_len] = {0};
-    //     //char client_string[buffer_len] = {0};
-
-    //     bool operator< (const Socket &s) const { return socketfd < s.socketfd; }
 };
 
-enum class PacketType: uint8_t {
-    VersionRequire = 0x00,
-    
-    AuthRequest = 0x01,
-    AuthResponse = 0x01,
-    
-    SysInfoRequest = 0x02,
-    SysInfoResponse = 0x02,
-    
-    ConfInfoRequest = 0x03,
-    ConfInfoResponse = 0x03,
-    
-    ProcInfoRequest = 0x04,
-    ProcInfoResponse = 0x04,
-    
-    EtherInfoRequest = 0x05,
-    EtherInfoResponse = 0x05,
-    
-    USBInfoRequest = 0x07,
-    USBInfoResponse = 0x07,
-    USBfileRequest = 0x0C,
-    USBfileResponse = 0x0C,
-    
-    PrintDevRequest = 0x08,
-    PrintDevResponse = 0x08,
-    PrintQueueRequest = 0x0D,
-    PrintQueueResponse = 0x0D,
+int log_init(std::ofstream &log_stream, const std::string log_name, const Level level, const bool* const log_env, const bool on_screen, const bool is_trunc) {
+    // log_stream must not be opened before getting into this function.
+    if (log_stream.is_open()) {
+        return -1;
+    }
+	if (is_trunc) {
+		log_stream.open(log_name, ios::out|ios::trunc);
+	}
+    else {
+		log_stream.open(log_name, ios::out|ios::app);
+	}
+    if (!log_stream.is_open()) {
+        return -2;
+    }
+    Log::get().setLogStream(log_stream);
+    Log::get().setLevel(level);
+    Log::get().setEnv(log_env);
+    Log::get().setOnScreen(on_screen);
+    return 0;
+}
 
-    TerInfoRequest = 0x09,
-    TerInfoResponse = 0x09,
-    DumbTerRequest = 0x0A,
-    DumbTerResponse = 0x0A,
-    IPTermRequest = 0x0B,
-    IPTermResponse = 0x0B,
+std::string logify_data(const uint8_t* data, const int len) {
+    std::stringstream ss, ss_word;
+    // ss_word.str(std::string());
+    int i;
+    for (i = 0; i < len; i++) {
+        if (i % 16 == 0) {
+            ss << ss_word.str() << std::endl;
+            ss_word.clear();    //clear any bits set
+            ss_word.str(std::string());
+            ss << ' ' << setw(4) << setfill('0') << hex << uppercase << i << ": ";
+        }
+        else if (i % 8 == 0) {
+            ss << "- ";
+        }
+        ss << setw(2) << setfill('0') << hex << uppercase << +data[i] << ' ';
+        // print printable char.
+        char ch = (data[i] > 31 && data[i] < 127) ? data[i] : '.';
+        ss_word << ch;
+        // ss_word << data[i];
+    }  
+    if (i%16==0){
+        ss << setw(0) << ss_word.str();
+    }
+    else {
+        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
+        // cout << "i: " << i << ", interval: " << interval << endl;
+        ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
+    }
+    return ss.str();
+}
 
-    End = 0xFF
-};
+void encrypt_auth(u_int& random_num, u_int& svr_time, uint8_t* auth, const int length) {
+    svr_time = (u_int)time(0);
+    svr_time = svr_time ^ (u_int)0xFFFFFFFF;
+    srand(svr_time);
+    random_num = (u_int)rand();
+    int pos = random_num % 4093;
+    for (int i = 0; i < length; i++) {
+        auth[i] = auth[i] ^ kSecret[pos];
+        pos = (pos+1)%4093;
+    }
+}
 
+bool decrypt_auth(const u_int random_num, uint8_t* auth, const int length) {
+	const uint8_t c_auth[33] = "yzmond:id*str&to!tongji@by#Auth^";
+    int pos = random_num % 4093;
+    for (int i = 0; i < length; i++) {
+        auth[i] = auth[i] ^ kSecret[pos];
+		if (i > length-32 && auth[i] != c_auth[i-length+32]) {
+			return false;
+		}
+        pos = (pos+1)%4093;
+    }
+	return true;
+}
 
-struct ClientDevInfo {
-    uint16_t cpu;  // MHz, from '/proc/cpuinfo/', 1st CPU
-    uint16_t ram;      // (kB to)MB, from '/proc/meminfo/'
-    uint16_t flash;   // MB
+void create_random_str(uint8_t* random_string, const int length) {
+    uint8_t *p = new uint8_t[length];
+    srand((unsigned)time(NULL));
+    for(int i = 0; i < length; i++) {
+        p[i] = rand() % 256;
+    }
+    memcpy(random_string, p, length);
+    delete[] p;
+}
 
-    uint16_t devInnerID;
-    uint8_t groupSeq[16];
-    uint8_t type[16];
-    uint8_t version[16];
-    
-    uint32_t instID;    //'devid' in database
-    uint8_t instInnID;
+// return size of the file, if open file error, return 0.
+// must read no more than 8191 bytes.
+int read_dat(const std::string dat_name, char* result) {
+	ifstream ifs;
+	ifs.open(dat_name, std::ifstream::in);
+	if (!ifs.is_open()) {
+		return -1;
+	}
+	// read no more than 8191 bytes.
+	ifs.seekg(0, std::ios::end);
+	int length = ifs.tellg();
+	length = length > 8191 ? 8191 : length;
+	ifs.seekg(0, std::ios::beg);
+	ifs.read(result, length);
+	ifs.close();
+	return length;
+}
 
-    uint8_t authstr[32];
-};
+int main() {
+    // Will be set by configuration file
+    const bool log_env[6] = {true, true, true, true, true, true};
+    const bool print_on_screen = true;
+	const bool is_trunc = true;
 
-
-class DevInfo {
-private:
-    // AuthResponse
-    char devid[9];  // 设备机构号
-    char devno[3];  //  机构内序号
-    time_t time;    //  本次写入数据时间
-    char ipaddr[15];    // Client端的IP地址
-    char sid[32];   //  设备的组序列号+设备的内部序列号
-    char type[16];  //  设备的型号
-    char version[16];   // 设备的软件版本号
-    int cpu[3]; // 设备的CPU主频
-    int sdram[3];   //设备的SDRAM大小
-    int flash[3];   // 设备的FLASH大小
-    int ethnum; // 以太口数量
-    int syncnum;    // 同步口数量
-    int asyncnum[2];    // 异步口数量
-    int switchnum[2];   // 交换机数量
-    char usbnum[6]; // USB口(存在/不存在)
-    char prnnum[6]; // 打印口(存在/不存在)
-    // SysInfoResponse
-    float cpu_used; // CPU占用率(float6.2)
-    float sdram_used;   // 内存使用情况(float6.2)
-    // ConfInfoResponse
-    char config[8192];  // 系统配置
-    // ProcInfoResponse
-    char process[8192]; // 系统当前进程
-    // EtherInfoResponse
-    char eth0_ip[15];   // eth0的ip地址
-    char eth0_mask[15]; // eth0的mask
-    char eth0_mac[17];  // eth0的mac
-    char eth0_state[4]; // eth0的状态(UP/Down)
-    char eth0_speed[5]; // eth0的速度(100/10)
-    char eth0_duplex[6];    // eth0的工作状态(半双工\全双工)
-    char eth0_autonego[2];  // eth0的是否自动协商(是\否)
-    int eth0_txbytes[11];   // eth0发送的字节数
-    int eth0_txpackets[11]; // eth0发送的包数
-    int eth0_rxbytes[11];   // eth0接受的字节数
-    int eth0_rxpackets[11]; // eth0接受的包数
-    char eth1_ip[15];   // eth1的ip地址
-    char eth1_mask[15]; // eth1的mask
-    char eth1_mac[17];  // eth1的mac
-    char eth1_state[4]; // eth1的状态(UP/Down)
-    char eth1_speed[5]; // eth1的速度(100/10)
-    char eth1_duplex[6];    // eth1的工作状态(半双工\全双工)
-    char eth1_autonego[2];  // eth1的是否自动协商(是\否)
-    int eth1_txbytes[11];   // eth1发送的字节数
-    int eth1_txpackets[11]; // eth1发送的包数
-    int eth1_rxbytes[11];   // eth1接受的字节数
-    int eth1_rxpackets[11]; // eth1接受的包数
-    // USBInfoResponse
-    char usbstate[6];   // 是否插入U盘
-    // USBFileResponse
-    char usbfiles[4096];    // U盘的根目录内容
-    // PrintDevResponse
-    char prnstate[6];   // 打印任务是否启动
-    // PrintQueueResponse
-    char prnfiles[4096];    // 打印队列中现有的内容
-    // TerInfoResponse
-    int tty_configed[3];    // 配置的终端数量
-    // IPTermResponse DumbTerResponse
-    char ttyinfo_devid[9];  // 网点机构号
-    char ttyinfo_devno[3];  // 网点序号
-    int ttyinfo_ttyno[3];   // 终端号
-    time_t ttyinfo_time;    // 时间号
-    int ttyinfo_readno[3];  // 从哪个终端号读配置
-    char ttyinfo_type[12];  // 类型(串口终端/串口打印/IP 终端)
-    char ttyinfo_state[12]; // 状态(菜单/正常)
-    char ttyinfo_ttyip[15]; // IP 终端的地址(串口终端无)
-    int ttyinfo_scrnum[2];  // 该终端对应的虚屏数
-    char scrinfo_devid[9];  // 网点机构号
-    char scrinfo_devno[3];  // 网点序号
-    int scrinfo_ttyno[3];   // 终端号
-    int scrinfo_scrno[2];   // 虚屏号
-    time_t scrinfo_time;    // 时间号
-    char scrinfo_is_current;    // 是否当前屏(*或空)
-    char scrinfo_protocol[16];  // 虚屏协议(ccbtelnet、yzssh)
-    char scrinfo_serverip[15];  // 服务器 IP
-    int scrinfo_serverport[5];  // 服务器端口号
-    char scrinfo_state[12]; // 状态(未登陆、已登陆)
-    char scrinfo_ttytype[12];   // 终端类型(vt100,vt200)
-    int scrinfo_tx_server[11];  // 发服务器的字节
-    int scrinfo_rx_server[11];  // 收服务器的字节
-    int scrinfo_tx_terminal[11];    // 发终端的字节
-    int scrinfo_rx_terminal[11];    // 收终端的字节
-    float scrinfo_ping_min; // ping 该虚屏所对应的前置服务器 IP 地址的延时的最小值
-    float scrinfo_ping_avg; // ping 该虚屏所对应的前置服务器 IP 地址的延时的平均值
-    float scrinfo_ping_max; // ping 该虚屏所对应的前置服务器 IP 地址的延时的最大值
-    // Final
-    int tty_connected[3];   // 已连接的终端数量
-public:
-    // provide function to transfer packet data to DevInfo Object Element
-};
-
-
-class Client {
-public:
-    Client(){
-        isConnected = false;
-        isVerified = false;
-        gene_dev_info();
+    // Log initialization
+    ofstream log_stream;
+    if (log_init(log_stream, "ts.log", Level::Debug, log_env, print_on_screen, is_trunc) < 0) {
+        std::cout << "[Client] Open log error!" << endl;
+        return -1;
     }
 
-    //TODO
-    int client_communicate(int socketfd, Options opt);
-    void client_pack_message(PacketType type, Options opt);
-    //TODO
-    void client_unpack_message(PakcetType type, Options opt);
+    // Get random_num, svr_time and authentication string.
+    uint8_t auth[33] = "yzmond:id*str&to!tongji@by#Auth^";
+    u_int random_num=0, svr_time=0;
+    encrypt_auth(random_num, svr_time, auth, 32);
+    LOG(Level::RDATA) << "auth test:"  << logify_data(auth, 32) << endl;
+    LOG(Level::Debug) << setw(8) << setfill('0') << uppercase << "random_num: " << hex << random_num << ", svr_time: " << svr_time << endl;
+	bool decrypt_true = decrypt_auth(random_num, auth, 32);
+	LOG(Level::Debug) << "decrypt_true: " << decrypt_true << endl;
+	LOG(Level::RDATA) << "decrypted file:"  << logify_data(auth, 32) << endl;
 
-    void push_back_uint16(vector<uint8_t> & message, uint16_t data);
-    void push_back_uint32(vector<uint8_t> & message, uint32_t data);
-    void push_back_array(vector<uint8_t> & message, uint8_t * array, int length);
-    void push_back_screen_info(vector<uint8_t> & message);
-    DevInfo Client::gene_dev_info();
-    
-private:
-    // TCP
-    int socketfd;
-    vector<uint8_t> send_message;
-    vector<uint8_t> recv_message;
+    // Get random string with designated length.
+    uint8_t *c_random = new uint8_t[32];
+    create_random_str(c_random, 32);
+    LOG(Level::RDATA) << "random test:"  << logify_data(c_random, 32) << endl;
 
-    PacketType recvPacketType;
-    PacketType sendPacketType;
-
-    char send_buffer[1024];
-    char recv_buffer[1024];
-
-    //status
-    bool isConnected;
-    bool isVerified;
-    uint8_t seqNum;
-    
-    // required verson
-    uint16_t serverMainVersion;
-    uint8_t serverSec1Version;
-    uint8_t serverSec2Version;
-
-    //raw server version
-    uint16_t rawServerMainVersion;
-    uint8_t  rawServerSec1Version;
-    uint8_t  rawServerSec2Version;
-    uint8_t  rawPermitEmptyTerminal;
-    uint16_t rawDumbTerFlags;
-    uint16_t rawIPTerFlags;
-
-    // dev info
-    ClientDevInfo dev;
-
-};
-
-class Server {
-public:
-    Server(){
-        isConnected = false;
-        isVerified = false;
-        gene_dev_info();
-    }
-
-    int server_communicate(int socketfd, Options opt);
-    void server_pack_message(PacketType type, Options opt);
-    void server_unpack_message(PakcetType type, Options opt);
-
-    void push_back_uint16(vector<uint8_t> & message, uint16_t data);
-    void push_back_uint32(vector<uint8_t> & message, uint32_t data);
-    void push_back_array(vector<uint8_t> & message, uint8_t * array, int length);
-    void pop_first_array(vector<uint8_t> & message, uint8_t * array, int length);
-    void pop_first_uint8(vector<uint8_t> & message, uint8_t& data);
-    void pop_first_uint16(vector<uint8_t> & message, uint16_t& data);
-    void pop_first_uint32(vector<uint8_t> & message, uint32_t& data);
-    void push_back_screen_info(vector<uint8_t> & message);
-    DevInfo Server::gene_dev_info();
-    
-private:
-    // TCP
-    int socketfd;
-    vector<uint8_t> send_message;
-    vector<uint8_t> recv_message;
-
-    PacketType recvPacketType;
-    PacketType sendPacketType;
-
-    char send_buffer[1024];
-    char recv_buffer[1024];
-
-    //status
-    bool isConnected;
-    bool isVerified;
-    uint8_t seqNum;
-    
-    // required verson
-    uint16_t serverMainVersion;
-    uint8_t serverSec1Version;
-    uint8_t serverSec2Version;
-
-    //raw server version
-    uint16_t rawServerMainVersion;
-    uint8_t  rawServerSec1Version;
-    uint8_t  rawServerSec2Version;
-    uint8_t  rawPermitEmptyTerminal;
-    uint16_t rawDumbTerFlags;
-    uint16_t rawIPTerFlags;
-
-    // dev info
-    ClientDevInfo dev;
-
-};
+	// Check read file.
+	// Automatically read less than 8191 bytes.
+	char *read_file = new char[8192];
+	std::string file_name = "config.dat";
+	int size = read_dat(file_name, read_file);
+	if (size < 0) {
+		LOG(Level::ERR) << "No such file: " << file_name << endl;
+		return -1;
+	}
+	LOG(Level::RDATA) << "read test:"  << logify_data(reinterpret_cast<uint8_t*>(read_file), size) << endl;
+	LOG(Level::Debug) << "size of data: " << size << endl;
+    return 0;
+}
