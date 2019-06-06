@@ -11,9 +11,9 @@ CircularQueue::CircularQueue(size_t init_size) {
     _num_free_bytes = _size;
 }
 
-CircularQueue::~CircularQueue() {
-    //delete[] data;
-}
+// CircularQueue::~CircularQueue() {
+//     //delete[] data;
+// }
 
 bool CircularQueue::enqueue(const uint8_t *buf, const size_t size) {
     if (_num_free_bytes < size) {
@@ -59,9 +59,10 @@ bool CircularQueue::is_full() {
 }
 
 uint16_t CircularQueue::current_packet_size() {
+    // Hacky magic number
     uint8_t buf[2];
-    buf[0] = data[(front+1) % _size];
-    buf[1] = data[(front+2) % _size];
+    buf[0] = data[(front+2) % _size];
+    buf[1] = data[(front+3) % _size];
     return (ntohs(*(uint16_t*)buf));
 }
 
@@ -73,20 +74,40 @@ bool CircularQueue::has_complete_packet() {
 
 DataPacket CircularQueue::dequeue_packet() {
     size_t payload_size = current_packet_size();
-
     DataPacketHeader header;
+
     // get rid of the header from the buffer
-    dequeue((uint8_t *)&header, 3); // the bit ordering of the 2-3 bytes doesn't really matter
+    dequeue((uint8_t*)&header, 4); // the bit ordering of the 2-3 bytes doesn't really matter
 
-    uint8_t payload[payload_size];
-    dequeue(payload, payload_size);
+    size_t struct_size; // TODO
+    switch (header.packet_type) {
+    case /* constant-expression */:
+        // TODO: T
+        DynamicPayload<T> payload;
+        /* code */
+        break;
 
-    vector<uint8_t> data;//(payload);
-    for(int i = 0; i < payload_size; i++) {
-        data.push_back(payload[i]);
+    default:
+        break;
     }
-    // DataPacket dp { *first_byte, data };
-    DataPacket dp {header.type, data };
-    return dp;
+
+    uint8_t payload_struct[struct_size];
+    dequeue(payload_struct, payload_size);
+
+    size_t vector_size = header.payload_size - struct_size;
+    // uint8_t payload_vector[vector_size];
+    vector<uint8_t> payload_vector;
+    payload_vector.reserve(vector_size);
+    dequeue(payload_vector.data(), vector_size);
+
+    return make_pair(header, payload);
+
+    // vector<uint8_t> data;//(payload);
+    // for(int i = 0; i < payload_size; i++) {
+    //     data.push_back(payload[i]);
+    // }
+    // // DataPacket dp { *first_byte, data };
+    // DataPacket dp {header.type, data };
+    // return dp;
 }
 
