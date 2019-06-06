@@ -106,7 +106,8 @@ int read_dat(const std::string dat_name, char* result, int maxLength) {
 	return length;
 }
 
-DevInfo Client::gene_dev_info() {
+// TODO: Is this necessary?
+DevInfo Server::gene_dev_info() {
     dev.cpu = 2600;
     dev.ram = 1846;
     dev.flash = 3723;
@@ -127,20 +128,20 @@ DevInfo Client::gene_dev_info() {
     return dev;
 }
 
-void Client::push_back_array(vector<uint8_t> & message, uint8_t * array, int length) {
+void Server::push_back_array(vector<uint8_t> & message, uint8_t * array, int length) {
     for(int i=0; i<length; i++) {
         message.push_back(array[i]);
     }
     return;
 }
 
-void Client::push_back_uint16(vector<uint8_t> & message, uint16_t data) {
+void Server::push_back_uint16(vector<uint8_t> & message, uint16_t data) {
     auto var16 = inet_htons(data);
     message.push_back((uint8_t)(var16>>8));
     message.push_back((uint8_t)(var16));
 }
 
-void Client::push_back_uint32(vector<uint8_t> & message, uint32_t data) {
+void Server::push_back_uint32(vector<uint8_t> & message, uint32_t data) {
     auto var32 = inet_htonl(data);
     message.push_back((uint8_t)(var32>>24));
     message.push_back((uint8_t)(var32>>16));
@@ -149,7 +150,7 @@ void Client::push_back_uint32(vector<uint8_t> & message, uint32_t data) {
     return;
 }
 
-void Client::pop_first_array(vector<uint8_t> & message, uint8_t * array, int length) {
+void Server::pop_first_array(vector<uint8_t> & message, uint8_t * array, int length) {
     for(int i=0; i<length; i++) {
         array[i] = message.front();
         message.erase(message.begin());
@@ -157,12 +158,12 @@ void Client::pop_first_array(vector<uint8_t> & message, uint8_t * array, int len
     return;
 }
 
-void Client::pop_first_uint8(vector<uint8_t> & message, uint8_t& data) {
+void Server::pop_first_uint8(vector<uint8_t> & message, uint8_t& data) {
     data = message.front();
     message.erase(message.begin());
 }
 
-void Client::pop_first_uint16(vector<uint8_t> & message, uint16_t& data) {
+void Server::pop_first_uint16(vector<uint8_t> & message, uint16_t& data) {
     uint8_t raw[2];
     raw[1] = message.front();
     message.erase(message.begin());
@@ -172,7 +173,7 @@ void Client::pop_first_uint16(vector<uint8_t> & message, uint16_t& data) {
     data = inet_ntohs(data);
 }
 
-void Client::pop_first_uint32(vector<uint8_t> & message, uint32_t& data) {
+void Server::pop_first_uint32(vector<uint8_t> & message, uint32_t& data) {
     uint8_t raw[4];
     raw[1] = message.front();
     message.erase(message.begin());
@@ -186,7 +187,8 @@ void Client::pop_first_uint32(vector<uint8_t> & message, uint32_t& data) {
     data = inet_ntohl(data);
 }
 
-void Client::push_back_screen_info(vector<uint8_t> & message) {
+// TODO: Is this necessary?
+void Server::push_back_screen_info(vector<uint8_t> & message) {
     //screen 
     message.push_back((uint8_t)(1 + rand() % 16));
     //pad
@@ -242,7 +244,8 @@ void Client::push_back_screen_info(vector<uint8_t> & message) {
     
 }
 
-void Client::client_pack_message(PacketType type, Options opt) {
+// TODO: Rewrite it symmetrically as client_pack message.
+void Server::server_unpack_message(Options opt) {
     vector<uint8_t> message;
     
     //head
@@ -605,23 +608,36 @@ void Client::client_pack_message(PacketType type, Options opt) {
     return true;
 }
 
-bool Client::client_unpack_message(const vector<uint8_t> message, Options opt) {
-    vector<uint8_t> message = return_message;
+// TODO: Rewrite it symmetrically as client_unpack message.
+bool Server::server_pack_message(PacketType type, Options opt) {
+    vector<uint8_t> message;
 
-    uint8_t front;
-    pop_first_uint8(message, front);
-    if(front != 0x11) {
-        LOG(Level::ERR) << "从服务器收到的包的包头错误，收到的包头为： " << front << endl;
-        return false;
-    }
-    pop_first_uint8(message, recvPacketType);
+    //head
+    message.push_back((uint8_t)0x91);
+    //descriptor
+    message.push_back((uint8_t)type);
 
-    switch(recvPacketType) {
+    switch(type) {
         case PacketType::AuthRequest:
-            uint16_t total_length;
-            pop_first_uint16(message, total_length);
-            uint16_t padding16;
-            pop_first_uint16(message, padding16);
+            //packet length
+            push_back_uint16(message, (uint16_t)60);
+            //padding
+            push_back_uint16(message, (uint16_t)0x0000);
+            //data length
+            push_back_uint16(message, (uint16_t)52);
+            //main version
+            push_back_uint16(message, (uint16_t)3);
+            //sec 1 version
+            message.push_back((uint8_t)0);
+            //sec 2 version
+            message.push_back((uint8_t)0);
+            break;
+            // 设备连接间隔
+            push_back_uint16(message, static_cast<uint16_t>(stoi(opt.at["设备连接间隔"]));
+            // 设备连接间隔
+            push_back_uint16(message, static_cast<uint16_t>(stoi(opt.at["设备连接间隔"]));
+
+
             uint16_t data_length;
             pop_first_uint16(message, data_length);
             pop_first_uint16(message, rawServerMainVersion);
@@ -692,7 +708,8 @@ bool Client::client_unpack_message(const vector<uint8_t> message, Options opt) {
     }
 }
 
-int Client::client_communicate(int socketfd, Options opt) {
+// TODO: now just pseudo.
+int Server::server_communicate(int socketfd, Options opt) {
     srand((unsigned)time(NULL));
     
     //block
