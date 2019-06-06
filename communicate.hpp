@@ -1,5 +1,6 @@
 #ifndef COMMUNICATE_H
 #define COMMUNICATE_H
+
 #include "shared_library.hpp"
 #include "time.h"
 
@@ -27,30 +28,29 @@ class Socket {
 //         bool operator< (const Socket &s) const { return socketfd < s.socketfd; }
 };
 
-
 enum class PacketType: uint8_t {
     VersionRequire = 0x00,
-
+    
     AuthRequest = 0x01,
     AuthResponse = 0x01,
-
+    
     SysInfoRequest = 0x02,
     SysInfoResponse = 0x02,
-
+    
     ConfInfoRequest = 0x03,
     ConfInfoResponse = 0x03,
-
+    
     ProcInfoRequest = 0x04,
     ProcInfoResponse = 0x04,
-
+    
     EtherInfoRequest = 0x05,
     EtherInfoResponse = 0x05,
-
+    
     USBInfoRequest = 0x07,
     USBInfoResponse = 0x07,
     USBfileRequest = 0x0C,
     USBfileResponse = 0x0C,
-
+    
     PrintDevRequest = 0x08,
     PrintDevResponse = 0x08,
     PrintQueueRequest = 0x0D,
@@ -66,6 +66,7 @@ enum class PacketType: uint8_t {
     End = 0xFF
 };
 
+
 struct ClientDevInfo {
     uint16_t cpu;  // MHz, from '/proc/cpuinfo/', 1st CPU
     uint16_t ram;      // (kB to)MB, from '/proc/meminfo/'
@@ -75,7 +76,7 @@ struct ClientDevInfo {
     uint8_t groupSeq[16];
     uint8_t type[16];
     uint8_t version[16];
-
+    
     uint32_t instID;    //'devid' in database
     uint8_t instInnID;
 
@@ -175,7 +176,6 @@ public:
     // provide function to transfer packet data to DevInfo Object Element
 };
 
-
 class Client {
 public:
     Client(){
@@ -185,7 +185,6 @@ public:
     }
 
     int client_communicate(int socketfd, Options opt);
-
     void client_pack_message(PacketType type, Options opt);
     void client_unpack_message(PakcetType type, Options opt);
 
@@ -194,7 +193,7 @@ public:
     void push_back_array(vector<uint8_t> & message, uint8_t * array, int length);
     void push_back_screen_info(vector<uint8_t> & message);
     DevInfo Client::gene_dev_info();
-
+    
 private:
     // TCP
     int socketfd;
@@ -208,7 +207,7 @@ private:
     bool isConnected;
     bool isVerified;
     uint8_t seqNum;
-
+    
     // server info
     uint16_t serverMainVersion;
     uint8_t serverSec1Version;
@@ -219,7 +218,5 @@ private:
 
 };
 
-int client_communicate(Options opt);
-int server_communicate(int socketfd, Options opt);
 
-#endif // COMMUNICATE_H
+int server_communicate(int socketfd, Options opt);
