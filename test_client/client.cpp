@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     }
 
     int begin_dev_id, n_devid;
-    if (argc != 3) {
+    if (argc < 3) {
         cerr << "argc != 3\n";
         return 1;
     } else {
@@ -37,9 +37,8 @@ int main(int argc, char *argv[])
         n_devid = stoi(argv[2]);
     }
 
-    cout << "n_devid" << n_devid << endl;
     // TODO: begin_dev_id
-    int ret = loop_client_fork_high_concurrency(opt, begin_dev_id, n_devid);
+    int ret = loop_client_fork(opt, begin_dev_id, n_devid);
 
     // \TODO{zzy: collect data using pipe and write to file}
 

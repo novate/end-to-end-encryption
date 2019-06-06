@@ -33,6 +33,7 @@ int loop_client_fork_high_concurrency(const Options &opt, int n_devid) {
 
         }
     }
+
 }
 
 int loop_client_fork(const Options &opt, int n_devid) {
