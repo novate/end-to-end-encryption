@@ -802,7 +802,6 @@ int Client::client_communicate(int socketfd, const Options & opt) {
         else {
             //TODO: disconnect
         }
-        
         client_unpack_message(socketfd, opt);
     }
     client_pack_message(static_cast<PacketType>(sendPacketType), opt);
@@ -815,7 +814,7 @@ int Client::client_communicate(int socketfd, const Options & opt) {
         
     if(send_msg(socketfd) == true) {
         LOG(Level::ENV) << "将缓冲区内容发送给服务器" << endl;
-        exit(0);
+        return(0);
     }
     else {
         //TODO: disconnect

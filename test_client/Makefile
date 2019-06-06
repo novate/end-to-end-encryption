@@ -1,4 +1,4 @@
-CXXFLAGS := -std=c++11 -Wall -Wextra
+CXXFLAGS := -std=c++11 -Wall -Wextra -lpthread
 
 SRC_CLIENT := client.cpp
 
