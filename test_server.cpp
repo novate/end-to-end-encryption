@@ -1,6 +1,6 @@
 #include "communicate.hpp"
 
-int log_init(std::ofstream &log_stream, const std::string log_name, const Level level, const bool* const log_env, const bool on_screen, const bool is_trunc) {
++int log_init(std::ofstream &log_stream, const std::string log_name, const Level level, const bool* const log_env, const bool on_screen, const bool is_trunc) {
     // log_stream must not be opened before getting into this function.
     if (log_stream.is_open()) {
         return -1;
