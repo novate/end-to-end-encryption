@@ -805,6 +805,20 @@ int Client::client_communicate(int socketfd, const Options & opt) {
         
         client_unpack_message(socketfd, opt);
     }
-
+    client_pack_message(static_cast<PacketType>(sendPacketType), opt);
+    u_int raw_pack_size = send_message.size();
+    uint8_t *raw_pack = new uint8_t[raw_pack_size];
+    for (u_int i = 0; i < raw_pack_size; i++) {
+        raw_pack[i] = send_message[i];
+        }
+    LOG(Level::SDATA) << "发送数据为：\n" << logify_data(raw_pack, raw_pack_size) << endl;
+        
+    if(send_msg(socketfd) == true) {
+        LOG(Level::ENV) << "将缓冲区内容发送给服务器" << endl;
+        exit(0);
+    }
+    else {
+        //TODO: disconnect
+    }
     return true;
 }
