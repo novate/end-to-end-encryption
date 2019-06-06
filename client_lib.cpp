@@ -8,8 +8,14 @@ int loop_client_fork(const Options &opt, int n_devid) {
         if (pid == -1) {
             graceful("loop_client_fork fork", -20);
         } else if(pid == 0) {
+            Client client;
             // child: only terminate if communication succeed
-            while (client_communicate(opt)) {}
+            do {
+                int sockfd = create_connection(opt);
+            }
+            while (client.client_communicate(socketfd, opt)) 
+                //TODO: fail & reconnect
+
 
             // stage done
             // exit(0);

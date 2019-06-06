@@ -145,7 +145,7 @@ void Client::push_back_uint32(vector<uint8_t> & message, uint32_t data) {
     message.push_back((uint8_t)(var32>>24));
     message.push_back((uint8_t)(var32>>16));
     message.push_back((uint8_t)(var32>>8));
-    message.push_back((uint8_t)(var16));
+    message.push_back((uint8_t)(var32));
     return;
 }
 
@@ -164,9 +164,9 @@ void Client::pop_first_uint8(vector<uint8_t> & message, uint8_t& data) {
 
 void Client::pop_first_uint16(vector<uint8_t> & message, uint16_t& data) {
     uint8_t raw[2];
-    raw[1] = message.front();
+    raw[0] = message.front();
     message.erase(message.begin());
-    raw[2] = message.front();
+    raw[1] = message.front();
     message.erase(message.begin());
     memcpy(&data, sizeof(data), raw, 2);
     data = inet_ntohs(data);
@@ -174,13 +174,13 @@ void Client::pop_first_uint16(vector<uint8_t> & message, uint16_t& data) {
 
 void Client::pop_first_uint32(vector<uint8_t> & message, uint32_t& data) {
     uint8_t raw[4];
+    raw[0] = message.front();
+    message.erase(message.begin());
     raw[1] = message.front();
     message.erase(message.begin());
-    raw[2] = message.front();
+    raw[2] =message.front();
     message.erase(message.begin());
-    raw[3] =message.front();
-    message.erase(message.begin());
-    raw[4] = message.front();
+    raw[3] = message.front();
     message.erase(message.begin());
     memcpy(&data, sizeof(data), raw, 4);
     data = inet_ntohl(data);
@@ -242,7 +242,7 @@ void Client::push_back_screen_info(vector<uint8_t> & message) {
     
 }
 
-void Client::client_pack_message(PacketType type, Options opt) {
+void Client::client_pack_message(PacketType type, const Options & opt) {
     vector<uint8_t> message;
     
     //head
@@ -605,8 +605,8 @@ void Client::client_pack_message(PacketType type, Options opt) {
     return true;
 }
 
-bool Client::client_unpack_message(const vector<uint8_t> message, Options opt) {
-    vector<uint8_t> message = return_message;
+bool Client::client_unpack_message(const Options & opt) {
+    vector<uint8_t> message = recv_message;
 
     uint8_t front;
     pop_first_uint8(message, front);
@@ -615,6 +615,7 @@ bool Client::client_unpack_message(const vector<uint8_t> message, Options opt) {
         return false;
     }
     pop_first_uint8(message, recvPacketType);
+    sendPacketType = recvPacketType;
 
     switch(recvPacketType) {
         case PacketType::AuthRequest:
@@ -628,8 +629,13 @@ bool Client::client_unpack_message(const vector<uint8_t> message, Options opt) {
             pop_first_uint8(message, rawServerSec1Version);
             pop_first_uint8(message, rawServerSec2Version);
             if (rawServerMainVersion < 0x02) {
-                LOG(Level::ERR) << "服务器版本号不符合要求，服务器版本为：" << rawServerMainVersion << "." << rawServerSec1Version << "." << rawServerSec2Version << "."<< endl;
-                return false;
+                LOG(Level::ERR) << "服务器版本号不符合要求，服务器版本为：" 
+                    << rawServerMainVersion << "." << rawServerSec1Version << "." << rawServerSec2Version << "."<< endl;
+                //reply: versionRequire
+                client_pack_message(PacketType::VersionRequire, opt);
+                send_buffer();
+                //wait for server to close TCP connection
+                return true;
             }
             pop_first_uint8(message, rawPermitEmptyTerminal);
             uint8_t padding8;
@@ -648,6 +654,7 @@ bool Client::client_unpack_message(const vector<uint8_t> message, Options opt) {
                 LOG(Level::ENV) << "服务器认证通过" << endl;
                 return true;
             }
+
         case PacketType::SysInfoRequest:
             LOG(Level::ENV) << "服务器请求系统信息" << endl;
             return true;
@@ -692,19 +699,155 @@ bool Client::client_unpack_message(const vector<uint8_t> message, Options opt) {
     }
 }
 
-int Client::client_communicate(int socketfd, Options opt) {
-    srand((unsigned)time(NULL));
+int Client::recv_message(int socketfd) {
+    int n;
+    uint8_t head[8];
+    //recv head
+    if((n = recv(socketfd, head, 8, 0)) == -1) {
+        LOG(Level::ERR) << "recv head return error!" << endl;
+        return false;
+    }
+    if(n == 0) {
+        LOG(Level::Info) << "remote server has closed connection." << endl;
+        return false;
+    }
+    if(n != 8) {
+        LOG(Level::ERR) << "recved incorrect head length! Expected: 8 "
+            << "recved: " << n << endl;
+        return false;       
+    }
     
-    //block
-    recv();
-    client_unpack_message();
-    while(recvPakcet != PacketType::End) {
-        //recv & send message
-        client_pack_message();
-        send();
-        recv();
-        client_unpack_message();
+    recvPacketType = head[1];
+
+    //recv data
+    uint16_t * pt;
+    pt = &head[6];
+    int dataLength = (int)inet_ntons(*pt);
+    if(dataLength > 0) {
+        if((n = recv(socketfd, recv_buffer, dataLength, 0)) == -1) {
+            LOG(Level::ERR) << "recv packet data return error!" << endl;
+            return false;
+        }
+        if(n == 0) {
+            LOG(Level::Info) << "remote server has closed connection." << endl;
+            return false;
+        }       
+        if(n != dataLength) {
+            LOG(Level::ERR) << "recved incorrect data length! Expected: " << dataLength
+                << "recved: " << n << endl;
+            return false;       
+        }
+    } //end of if
+
+    vector<uint8_t>().swap(recv_message);
+    if(recv_message.size() != 0) {
+        LOG(Level::Debug) << "clear vector failed." << endl;
+        return false;
     }
 
-    return 0;
+    for(int i = 0; i < 8; i++) {
+        recv_message.push_back(head[i]);
+    }
+    for(int i = 0; i < dataLength; i++) {
+        recv_message.push_back(recv_buffer[i]);
+    }
+
+    return true;
+}
+
+int Client::send_message(int socketfd) {
+    //send head
+    int n;
+    uint8_t head[8];
+    for(int i = 0; i < 8; i++) {
+        head[i] = send_message[i];
+    }
+    send_message.erase(send_message.begin(), send_message.begin()+8);
+    
+    if((n = send(socketfd, head, 8, 0)) == -1) {
+        LOG(Level::ERR) << "send head return error!" << endl;
+        return false;
+    }
+    if(n == 0) {
+        LOG(Level::Info) << "remote server has closed connection." << endl;
+        return false;
+    }
+    if(n != 8) {
+        LOG(Level::ERR) << "sent incorrect head length! Expected: 8 "
+            << "sent: " << n << endl;
+        return false;       
+    }
+
+    //send data
+    vector<uint8_t>::iterator it;
+    int pos = 0;
+    for(it = send_message.begin(); it != send_message.end(); it++) {
+        send_buffer[pos++] = *it;
+    }
+
+    send_message.erase(send_message.begin(), send_message.end());
+    if(send_message.size() != 0) {
+        LOG(Level::Debug) << "clear vector failed." << endl;
+        return false;
+    }
+
+    for(int i = 0; )
+    uint16_t * pt;
+    pt = &head[6];
+    int dataLength = (int)inet_ntons(*pt);
+    if(dataLength > 0) {
+        if((n = send(socketfd, send_buffer, dataLength, 0)) == -1) {
+            LOG(Level::ERR) << "send packet data return error!" << endl;
+            return false;
+        }
+        if(n == 0) {
+            LOG(Level::Info) << "remote server has closed connection." << endl;
+            return false;
+        }       
+        if(n != dataLength) {
+            LOG(Level::ERR) << "sent incorrect data length! Expected: " << dataLength
+                << "sent: " << n << endl;
+            return false;       
+        }
+    } //end of if
+
+    return true;
+}
+
+int Client::client_communicate(int socketfd, const Options & opt) {
+    srand((unsigned)time(NULL));
+
+    //TODO: connect to server
+
+
+    if(recv_message(socketfd) == true) {
+        LOG(Level::Info) << "recved buffer from server. " << endl;
+    }
+    else {
+        //TODO: disconnect
+    }
+
+    client_unpack_message(opt);
+
+    while(recvPacketType != PacketType::End) {
+        client_pack_message(sendPacketType, opt);
+        
+        if(send_message(socketfd) == true) {
+            LOG(Level::Info) << "send buffer to server. " << endl;
+        }
+        else {
+            //TODO: disconnect
+        }
+        
+        if(recv_message(socketfd) == true) {
+            LOG(Level::Info) << "recv buffer from server. " << endl;
+        }
+        else {
+            //TODO: disconnect
+        }
+        
+        client_unpack_message(opt);
+    }
+
+    return true;
 }

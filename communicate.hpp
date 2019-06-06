@@ -442,18 +442,26 @@ public:
         isVerified = false;
         gene_dev_info();
     }
+    //recv & send message
+    int recv_message();
+    int send_message();
 
     //TODO
-    int client_communicate(int socketfd, Options opt);
+    int client_communicate(int socketfd, const Options & opt);
 
-    void client_pack_message(PacketType type, Options opt);
-    //TODO
-    void client_unpack_message(PakcetType type, Options opt);
+    //pack & unpack
+    void client_pack_message(PacketType type, const Options & opt);
+    void client_unpack_message(Options opt);
 
     void push_back_uint16(vector<uint8_t> & message, uint16_t data);
     void push_back_uint32(vector<uint8_t> & message, uint32_t data);
     void push_back_array(vector<uint8_t> & message, uint8_t * array, int length);
     void push_back_screen_info(vector<uint8_t> & message);
+
+    void pop_first_uint8(vector<uint8_t> & message, uint8_t& data);
+    void pop_first_uint16(vector<uint8_t> & message, uint16_t& data);
+    void pop_first_uint32(vector<uint8_t> & message, uint32_t& data);
+    void pop_first_array(vector<uint8_t> & message, uint8_t * array, int length);
     DevInfo Client::gene_dev_info();
     
 private:
@@ -465,8 +473,8 @@ private:
     PacketType recvPacketType;
     PacketType sendPacketType;
 
-    char send_buffer[1024];
-    char recv_buffer[1024];
+    char send_buffer[4096];
+    char recv_buffer[4096];
 
     //status
     bool isConnected;
@@ -547,3 +555,4 @@ private:
     ClientDevInfo dev;
 
 };
+
