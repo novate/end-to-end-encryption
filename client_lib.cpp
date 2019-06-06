@@ -1,6 +1,41 @@
 #include "client_lib.hpp"
 #include "communicate.hpp"
 
+int loop_client_fork_high_concurrency(const Options &opt, int n_devid) {
+    int num_concurrent = 0;
+
+    // For now, fork all
+    // TODO: limit fork number by using another set of semaphore
+
+    // Create semaphores
+    int n_semaphores = ceil(n_devid / kNumConcurrency);
+    sem_t* semaphores[n_semaphores];
+
+    pid_t pid;
+    for (int i = 0; i < n_devid; i++) {
+        if (i < n_semaphores) { // Initialize semaphores
+            string sem_name = "client_fork_sem_" + itoa(i);
+            errno = 0;
+            semaphores[i] = sem_open(sem_name, O_CREAT, 0644, kNumConcurrency);
+            if (semaphores[i] == SEM_FAILED) {
+                perror("semaphore {" +  sem_name "} initilization");
+                exit(1);
+            }
+        }
+        // fork with a semaphore
+        pid = fork();
+        if (pid == -1) { // Fork error
+            graceful("loop_client_fork fork", -20);
+        } else if (pid == 0) { // Child process
+            // TODO: correct parameters
+            client_communicate(???, opt, semaphores[i % n_semaphores]);
+        } else { // Parent process
+
+        }
+    }
+
+}
+
 int loop_client_fork(const Options &opt, int n_devid) {
     pid_t pid;
     for (int i = 0; i < n_devid; i++) {
