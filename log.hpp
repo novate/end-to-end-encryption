@@ -13,46 +13,35 @@
 #define __FILENAME__ __FILE__
 #endif
 
-/*
 #define LOG(level) \
 if (level > fly::Log::get().getLevel()) ; \
 else fly::Log::get().getStream() << fly::Log::get().getTime() << " [" << getpid() << "] "
-*/
-// else fly::Log::get().getStream() << "["#level"]" << "[" << __FILENAME__ << ":" << std::dec << __LINE__ << "] "
 
-#define LOG(level) fly::Log::get().getStream(level) << dec << fly::Log::get().getTime() << " [" << getpid() << "] "
+// else fly::Log::get().getStream() << "["#level"]" << "[" << __FILENAME__ << ":" << std::dec << __LINE__ << "] "
 
 namespace fly
 {
 
-enum class Level: int
+enum Level
 {
-    ENV=0,
-    ERR=1,
-    SPACK=2,
-    RPACK=3,
-    SDATA=4,
-    RDATA=5,
-    Debug=6
+    Error,
+    Info,
+    Debug,
 };
 
 class Log
 {
 public:
     void setLogStream(std::ostream& stream);
-    void setEnv(const bool* const log_env);
-    void setOnScreen(const bool on_screen);
     Log& setLevel(Level level);
-
     Level getLevel();
+
     std::ostream& getStream();
-    std::ostream& getStream(Level level);
     static Log& get();
     std::string getTime();
 private:
     Level m_logLevel;
     std::ostream* m_logStream;
-    bool m_logEnv[6] {false, false, false, false, false, false};
 };
 
 
