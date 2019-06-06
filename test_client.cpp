@@ -496,8 +496,19 @@ bool Client::client_unpack_message(PacketType type) {
 
 }
 
-int client_communicate(int socketfd, Options opt) {
-    Client client;
+int Client::client_communicate(int socketfd, Options opt) {
     srand((unsigned)time(NULL));
+    
+    //block
+    recv();
+    client_unpack_message();
+    while(recvPakcet != PacketType::End) {
+        //recv & send message
+        client_pack_message();
+        send();
+        recv();
+        client_unpack_message();
+    }
+
     return 0;
 }

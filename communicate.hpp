@@ -184,8 +184,11 @@ public:
         gene_dev_info();
     }
 
+    //TODO
     int client_communicate(int socketfd, Options opt);
+
     void client_pack_message(PacketType type, Options opt);
+    //TODO
     void client_unpack_message(PakcetType type, Options opt);
 
     void push_back_uint16(vector<uint8_t> & message, uint16_t data);
@@ -200,6 +203,9 @@ private:
     vector<uint8_t> send_message;
     vector<uint8_t> recv_message;
 
+    PacketType recvPacketType;
+    PacketType sendPacketType;
+
     char send_buffer[1024];
     char recv_buffer[1024];
 
@@ -208,10 +214,15 @@ private:
     bool isVerified;
     uint8_t seqNum;
     
-    // server info
+    // required verson
     uint16_t serverMainVersion;
     uint8_t serverSec1Version;
     uint8_t serverSec2Version;
+
+    //raw server version
+    uint16_t rawServerMainVersion;
+    uint8_t  rawServerSec1Version;
+    uint8_t  rawServerSec2Version;
 
     // dev info
     ClientDevInfo dev;
