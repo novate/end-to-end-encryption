@@ -81,7 +81,7 @@ void create_random_str(uint8_t* random_string, const int length) {
     uint8_t *p = new uint8_t[length];
     srand((unsigned)time(NULL));
     for(int i = 0; i < length; i++) {
-        p[i] = rand() % 256;
+        p[i] = rand() % 25 + 65;
     }
     memcpy(random_string, p, length);
     delete[] p;
