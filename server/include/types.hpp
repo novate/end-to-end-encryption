@@ -4,7 +4,6 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <string>
-#include "Log.h"
 
 #include <algorithm>    // std::max
 #include <queue>
@@ -28,8 +27,6 @@
 #include <sys/socket.h>
 #include <sys/prctl.h>
 
-using namespace fly;
-
 #define graceful_return(s, x) {\
     perror((s));\
     return((x)); }
@@ -38,14 +35,6 @@ using namespace fly;
 const unsigned int kHeaderSize = 4; // network packet header size
 const size_t kMaxPacketLength = 10240; // TODO: double check on this number
 const size_t kRecvBufferSize = kMaxPacketLength;
-
-enum class PacketType : uint8_t {
-    DemoPacket = 1;
-};
-
-Struct DemoPacket {
-    uint8_t padding[4];
-};
 
 // Convert first to a packet struct
 using DynamicPayload = std::pair<uint8_t*, std::vector<uint8_t>>;
@@ -100,22 +89,49 @@ enum class PacketType: uint8_t {
 };
 
 struct VersionRequirePacket {
-    uint8_t direction;
-    uint8_t descriptor;
-    uint16_t packet_size;
     uint8_t pad_1[2];
-    uint16_t payload;
+    uint16_t payload_size;
     uint16_t version_require;
     uint8_t version_sub1;
     uint8_t version_sub2;
     uint16_t time_gap_fail;
     uint16_t time_gap_succeed;
     uint8_t is_empty_tty;
-    uint8_t pad[3];
+    uint8_t pad_2[3];
     uint8_t auth_string[32];
     uint32_t random_num;
     uint32_t svr_time;
 };
+
+struct AuthRequestPacket {
+
+};
+
+struct AuthResponsePacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+    uint16_t cpu_frequence;
+    uint16_t ram;
+    uint16_t flash;
+    uint16_t internal_serial;
+    uint8_t group_serial[16];
+    uint8_t device_type[16];
+    uint8_t software_verison[16];
+    uint8_t ethnum;
+    uint8_t syncnum;
+    uint8_t asyncnum;
+    uint8_t switchnum;
+    uint8_t usbnum;
+    uint8_t prnnum;
+    uint8_t pad_2[2];
+    uint32_t devid;
+    uint8_t devno;
+    uint8_t pad_3[3];
+    uint8_t auth_string[32];
+    uint32_t random_num;
+};
+
+
 
 // Used as a buffer in transfer layer, instantiated in Clients
 class CircularQueue {
@@ -134,7 +150,7 @@ public:
     bool is_empty();
     bool is_full();
     bool has_complete_packet(); // has at least one complete packet
-    DataPacket dequeue_packet(); // return a complete packet
+    Packet dequeue_packet(); // return a complete packet
 
 private:
     size_t _size;
@@ -153,9 +169,6 @@ struct Client {
     std::queue< std::vector<uint8_t> > send_buffer;
 
     int socket_fd;
-
-
-
 };
 
 #endif
