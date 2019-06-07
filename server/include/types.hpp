@@ -131,7 +131,108 @@ struct AuthResponsePacket {
     uint32_t random_num;
 };
 
+struct SysInfoResponsePacket {
+    uint8_t pad_1[2];   
+    uint16_t payload_size;
+    uint32_t user_cpu_time;
+    uint32_t nice_cpu_time;
+    uint32_t system_cpu_time;
+    uint32_t idle_cpu_time; 
+    uint32_t freed_memory;
+};
 
+struct ConfInfoResponsePacket {
+    uint8_t pad_1[2];   
+    uint16_t payload_size;
+};
+
+struct ProcInfoResponsePacket {
+    uint8_t pad_1[2];   
+    uint16_t payload_size;
+}
+
+struct EtherInfoResponsePacket {
+    uint16_t port;  // Ethernet 0/1 port   
+    uint16_t payload_size;
+    uint8_t if_exist;
+    uint8_t if_set;
+    uint8_t state;  // UP or DOWN
+    uint8_t pad_1;
+    uint8_t mac[6];
+    uint16_t options;
+    uint32_t addr;
+    uint32_t mask;
+    uint32_t addr_port_1;
+    uint32_t mask_port_1;
+    uint32_t addr_port_2;
+    uint32_t mask_port_2;
+    uint32_t addr_port_3;
+    uint32_t mask_port_3;
+    uint32_t addr_port_4;
+    uint32_t mask_port_4;
+    uint32_t addr_port_5;
+    uint32_t mask_port_5;
+    uint32_t send_bytes;
+    uint32_t send_packets;
+    uint32_t send_errs;
+    uint32_t send_drop;
+    uint32_t send_fifo;
+    uint32_t send_frame;
+    uint32_t send_compressed;
+    uint32_t send_multicast;
+    uint32_t recv_bytes;
+    uint32_t recv_packets;
+    uint32_t recv_errs;
+    uint32_t recv_drop;
+    uint32_t recv_fifo;
+    uint32_t recv_frame;
+    uint32_t recv_compressed;
+    uint32_t recv_multicast;
+};
+
+struct TerInfoResponsePacket {
+    uint16_t port;
+    uint16_t payload_size;
+    uint8_t dumb_term[16];
+    uint8_t ip_term[254];
+    uint16_t term_num;
+};
+
+struct IPTermResponsePacket {
+    uint16_t ttyno;
+    uint16_t payload_size;
+    uint8_t port;
+    uint8_t readno;
+    uint8_t active_screen;
+    uint8_t screen_num;
+    uint32_t ttyip;
+    uint8_t type[12];
+    uint8_t state[8]; 
+};
+
+struct ScreenInfoPacket {
+    uint8_t screen_no;
+    uint8_t pad_1;
+    uint16_t server_port;
+    uint32_t server_ip;
+    uint8_t proto[12];
+    uint8_t state[8];
+    uint8_t promp[24];
+    uint8_t tty_type[12];
+    uint32_t time;
+    uint32_t send_term_byte;
+    uint32_t recv_term_byte;
+    uint32_t send_server_byte;
+    uint32_t recv_server_byte;
+    uint32_t ping_min;
+    uint32_t ping_avg;
+    uint32_t ping_max;
+};
+
+struct EndPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
 
 // Used as a buffer in transfer layer, instantiated in Clients
 class CircularQueue {
