@@ -41,13 +41,7 @@ int main(int argc, char *argv[])
     int ret = loop_client_fork(opt, begin_dev_id, n_devid);
     time_t after = time(0);
     double elapsed_time = difftime(after, before);
-    if (elapsed_time < 1) {
-        LOG(Level::ENV) << "子进程回收全部完成，总数=" << n_devid << "，耗时小于1秒" << std::endl;
-    }
-    else {
-        LOG(Level::ENV) << "子进程回收全部完成，总数=" << n_devid << "，耗时=" << elapsed_time << "秒" << std::endl;
-    }
-    // LOG(Level::ENV) << "子进程回收全部完成，总数=" << n_devid << "，耗时=" << elapsed_time << "秒" << std::endl;
+    LOG(Level::ENV) << "子进程回收全部完成，总数=" << n_devid << "，耗时=" << elapsed_time << "秒" << std::endl;
     
     return ret;
 }
