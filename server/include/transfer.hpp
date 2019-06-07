@@ -1,8 +1,8 @@
 #ifndef TRANSFER_H
 #define TRANSFER_H
 #include "types.hpp"
-#include "conf.hpp"
-#include "../include/presentation.hpp"
+// #include "conf.hpp"
+#include "./presentation.hpp"
 
 
 
@@ -51,8 +51,6 @@ private:
     int accept_new_client(int listener);
 
     int reset_rw_fd_sets(fd_set &read_fds, fd_set &write_fds);
-
-
 };
 
 #endif

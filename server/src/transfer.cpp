@@ -142,6 +142,7 @@ int TransferLayer::reset_rw_fd_sets(fd_set &read_fds, fd_set &write_fds) {
             LOG(Debug) << "write_fds\n";
         }
     }
+
     return maxfd;
 }
 
@@ -181,6 +182,8 @@ int TransferLayer::accept_new_client(int listener) {
                 get_in_addr((struct sockaddr*) &remoteaddr),
                 remoteIP, INET6_ADDRSTRLEN)
             << " on socket " << newfd << std::endl;
+        
+        session_set.back().ipaddr = inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN);
     }
     return newfd;
 }
