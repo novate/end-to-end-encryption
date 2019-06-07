@@ -28,6 +28,7 @@ class DatabaseConnection {
 		// bool check_password(string account_name, string password);
 		// bool reset_password(string account_name, string password);
 		bool OnRecvAuthResponse(Packet packet, Client client);
+		bool OnRecvSysInfoResponse(Packet packet);
 		static DatabaseConnection *obj;
 		static DatabaseConnection *get_instance(); 		  	 // return a class instance	
 		MYSQL_RES *MysqlExecCommand(string command);

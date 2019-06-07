@@ -67,6 +67,9 @@ MYSQL_RES* DatabaseConnection::MysqlExecCommand(string command)
 
 bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client client)
 {
+	// sql result handler
+	MYSQL_RES *result;
+
 	AuthResponsePacket &packet_struct = *((AuthResponsePacket *)packet.payload.first);
 	std::stringstream command;
 	command << "insert into devstate_base (devstate_base_devid, devstate_base_devno, devstate_base_time, devstate_base_ipaddr, devstate_base_sid, "
@@ -80,5 +83,49 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client client)
 	// time
 	command << "now(), ";
 	// ipaddr
-	command << client.ipaddr;
+	command << "'" << client.ipaddr << "', ";
+	// sid
+	std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
+	command << "'" << group_serial << to_string(packet_struct.internal_serial) << "', ";
+	// type
+	std::string internal_serial(packet_struct.device_type, packet_struct.device_type + 16);
+	command << "'" << internal_serial << "', ";
+	// version
+	std::string software_version(packet_struct.software_verison, packet_struct.software_verison + 16);
+	command << "'" << software_version << "', ";
+	// cpu
+	command << "'" << to_string(packet_struct.cpu_frequence) << "', ";
+	// sdram
+	command << "'" << to_string(packet_struct.ram) << "', ";
+	// flash
+	command << "'" << to_string(packet_struct.flash) << ", ";
+	// ethnum
+	command << "'" << to_string(packet_struct.ethnum) << ", ";
+	// syncnum
+	command << "'" << to_string(packet_struct.syncnum) << ", ";
+	// asyncnum
+	command << "'" << to_string(packet_struct.asyncnum) << ", ";
+	// switchnum
+	command << "'" << to_string(packet_struct.switchnum) << ", ";
+	// usbnum
+	command << "'" << to_string(packet_struct.usbnum) << ", ";
+	// prnnum
+	command << "'" << to_string(packet_struct.prnnum) << ")";
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet) {
+	float cpu_used;
+	// sql result handler
+	MYSQL_RES *result;
+
+	SysInfoResponsePacket &packet_struct = *((SysInfoResponsePacket*)packet.payload.first);
+
+	cpu_used = (packet_struct.user_cpu_time + packet_struct.system_cpu_time) / (packet_struct.user_cpu_time + packet_struct.nice_cpu_time +packet_struct.idle_cpu_time);
+
+	std::stringstream command;
+	command << fixed << setprecision(2);
 }
