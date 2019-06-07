@@ -7,9 +7,7 @@ void Client::gene_dev_info(int devid) {
     dev.flash = 3723;
     
     srand((unsigned)time(nullptr));
-    //'devid' in database
-    //TODO: need unique instID(devid)! and I'm not doing this.
-    // dev.instID = rand() % 512;
+
     dev.instID = devid;
     dev.instInnID = 1;
 
@@ -378,10 +376,11 @@ bool Client::client_pack_message(PacketType type, const Options & opt) {
             
             int total = minTNum + rand() % (maxTNum - minTNum + 1);
             int async_term_num = 0; 
-            int ipterm_num = total - async_term_num;
-
+            terCount = total - async_term_num;
+            
+            srand((unsigned)time(nullptr));
             int randPos;    //generate random ttyInfoMap
-            for(int i = 0; i < ipterm_num; i++) {
+            for(u_int i = 0; i < terCount; i++) {
                 randPos = rand() % 254;
                 while(ttyInfoMap[16 + randPos] == 1) {
                     randPos = rand() % 254;
@@ -410,8 +409,10 @@ bool Client::client_pack_message(PacketType type, const Options & opt) {
             int minSNum = stoi(opt.at("每个终端最小虚屏数量"));
             LOG(Level::Debug) << "max screen num = " << maxSNum << endl;
             LOG(Level::Debug) << "min screen num = " << minSNum << endl;
-
+            
+            srand((unsigned)time(nullptr));
             uint8_t screenNum = minSNum + rand() % (maxSNum - minSNum + 1);
+            screenCount += screenNum;
             uint8_t activeScreen = rand() % screenNum;
 
             //packet length
@@ -458,8 +459,9 @@ bool Client::client_pack_message(PacketType type, const Options & opt) {
             int minSNum = stoi(opt.at("每个终端最小虚屏数量"));
             LOG(Level::Debug) << "max screen num = " << maxSNum << endl;
             LOG(Level::Debug) << "min screen num = " << minSNum << endl;
-
+            srand((unsigned)time(nullptr));
             uint8_t screenNum = minSNum + rand() % (maxSNum - minSNum + 1);
+            screenCount += screenNum;
             uint8_t activeScreen = rand() % screenNum;
 
             //packet length
@@ -759,14 +761,11 @@ int Client::send_msg(int socketfd) {
     return true;
 }
 
-int Client::client_communicate(int socketfd, const Options & opt) {
+int Client::client_communicate(int socketfd, const Options & opt, std::ofstream& xls_stream) {
     srand((unsigned)time(nullptr));
 
-    //TODO: connect to server
-
-
     if(recv_msg(socketfd) == true) {
-        LOG(Level::ENV) << "recved buffer from server. " << endl;
+        LOG(Level::SPACK) << "从服务器收到数据\n" << endl;
     }
     else {
         //TODO: disconnect
@@ -793,14 +792,16 @@ int Client::client_communicate(int socketfd, const Options & opt) {
             LOG(Level::ENV) << "将缓冲区内容发送给服务器" << endl;
         }
         else {
-            //TODO: disconnect
+            // disconnect and reconnect if the return value is not 0.
+            return 1;
         }
         
         if(recv_msg(socketfd) == true) {
             LOG(Level::ENV) << "从服务器收到数据" << endl;
         }
         else {
-            //TODO: disconnect
+            // disconnect and reconnect if the return value is not 0.
+            return 1;
         }
         
         client_unpack_message(socketfd, opt);
@@ -814,11 +815,17 @@ int Client::client_communicate(int socketfd, const Options & opt) {
     LOG(Level::SDATA) << "发送数据为：\n" << logify_data(raw_pack, raw_pack_size) << endl;
         
     if(send_msg(socketfd) == true) {
-        LOG(Level::ENV) << "将缓冲区内容发送给服务器" << endl;
+        LOG(Level::ENV) << "完成所有发包，客户端退出" << endl;
+        time_t now = time(0);
+        char timestamp[100] = "";
+        strftime(timestamp, 100, "%T", localtime(&now));
+        std::string cur_time(timestamp);
+        xls_stream << cur_time << '\t' << dev.instID << '\t' << "1\t" << terCount << '\t' << screenCount << std::endl;
         return 0;
     }
     else {
-        //TODO: disconnect
+        // disconnect and reconnect if the return value is not 0.
+        return 1;
     }
     return 1;
 }

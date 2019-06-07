@@ -12,7 +12,7 @@ const std::string kFnConfClient = "ts.conf";
 const std::string kFnConfServer = "yzmond.conf";
 
 using Options = std::unordered_map<std::string, std::string>;
-
+void print_help();
 // Options parse_arguments(int argc, char **argv, bool is_client);
 Options parse_arguments(std::ifstream &ifs, bool is_client);
 

@@ -3,10 +3,8 @@
 using namespace std;
 
 
-void print_help(bool is_client) {
-	//std::cout << "Usage: " << (is_client ? "client" : "server") << " --ip x.x.x.x"
-		//<< " --port xx" << " --block/--nonblock" << " --fork/--nonfork"
-		//<< (is_client ? " [--num 1~1000]" : "") << std::endl;
+void print_help() {
+	std::cout << "使用方法：" << "./ts <初始devid，必须9位> <子进程数（1-50000）>" << std::endl;
 }
 
 bool is_empty_or_comment(string &s) {

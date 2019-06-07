@@ -164,13 +164,15 @@ public:
         isConnected = false;
         isVerified = false;
         gene_dev_info(devid);
+        terCount = 0;
+        screenCount = 0;
     }
     //recv & send message
     int recv_msg(int socketfd);
     int send_msg(int socketfd);
 
     //TODO
-    int client_communicate(int socketfd, const Options & opt);
+    int client_communicate(int socketfd, const Options & opt, std::ofstream& xls_stream);
 
     //pack & unpack
     bool client_pack_message(PacketType type, const Options & opt);
@@ -218,6 +220,9 @@ private:
     uint8_t  rawPermitEmptyTerminal;
     uint16_t rawDumbTerFlags;
     uint16_t rawIPTerFlags;
+    
+    u_int terCount;
+    u_int screenCount;
 
     // dev info
     ClientDevInfo dev;

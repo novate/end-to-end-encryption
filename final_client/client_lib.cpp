@@ -1,9 +1,15 @@
 #include "client_lib.hpp"
 
 int loop_client_fork(const Options &opt, int begin_dev_id, int n_devid) {
+    // Spread sheet initialization
+    ofstream xls_stream;
+    xls_stream.open("ts_count.xls", ios::out|ios::trunc);
+    // xls_stream << "写入时间\tdevid\tdev数量\t终端数量\t虚屏数量" << endl;
+
     pid_t pid;
     for (int i = 0; i < n_devid; i++) {
         pid = fork();
+        prctl(PR_SET_PDEATHSIG, SIGHUP);
         if (pid == -1) {
             graceful("loop_client_fork fork", -20);
         } else if(pid == 0) {
@@ -13,17 +19,20 @@ int loop_client_fork(const Options &opt, int begin_dev_id, int n_devid) {
             do {
                 socketfd = create_connection(opt);
             }
-            while (client.client_communicate(socketfd, opt));
+            // disconnect and reconnect if the return value is not 0.
+            while (client.client_communicate(socketfd, opt, xls_stream));
             close(socketfd);
             exit(0);
         } else { // parent: noop
         }
         // limit fork number
         if (i >= kNumProcess) {
+            // LOG(Level::ENV) << "子进程回收" << endl;
             waitpid(-1, NULL, 0); // waiting for all children
         }
     }
     for (int i = 0; i < max(n_devid - kNumProcess, n_devid); i++) {
+        // LOG(Level::ENV) << "子进程回收" << endl;
         waitpid(-1, NULL, 0); // waiting for all children
     }
     return 0;

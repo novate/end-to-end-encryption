@@ -7,8 +7,6 @@ const bool is_client = true;
 
 int main(int argc, char *argv[])
 {
-    // argv: ./tc 100
-
     string fn_conf = is_client ? kFnConfClient : kFnConfServer;
     ifstream ifs(fn_conf);
     Options opt = parse_arguments(ifs, is_client);
@@ -23,24 +21,33 @@ int main(int argc, char *argv[])
 
     // Log initialization
     ofstream log_stream;
-    if (log_init(log_stream, "ts.log", Level::Debug, log_env, print_on_screen, is_trunc) < 0) {
+    if (log_init(log_stream, "ts.log", Level::RDATA, log_env, print_on_screen, is_trunc) < 0) {
         std::cout << "[Client] Open log error!" << endl;
         return -1;
     }
 
     int begin_dev_id, n_devid;
     if (argc < 3) {
-        cerr << "argc != 3\n";
-        return 1;
+        cerr << "您需要输入2个参数！\n";
+        print_help();
+        return -1;
     } else {
         begin_dev_id = stoi(argv[1]);
         n_devid = stoi(argv[2]);
     }
 
-    // TODO: begin_dev_id
+    LOG(Level::ENV) << "fork子进程开始" << std::endl;
+    time_t before = time(0);
     int ret = loop_client_fork(opt, begin_dev_id, n_devid);
-
-    // \TODO{zzy: collect data using pipe and write to file}
-
+    time_t after = time(0);
+    double elapsed_time = difftime(after, before);
+    if (elapsed_time < 1) {
+        LOG(Level::ENV) << "子进程回收全部完成，总数=" << n_devid << "，耗时小于1秒" << std::endl;
+    }
+    else {
+        LOG(Level::ENV) << "子进程回收全部完成，总数=" << n_devid << "，耗时=" << elapsed_time << "秒" << std::endl;
+    }
+    // LOG(Level::ENV) << "子进程回收全部完成，总数=" << n_devid << "，耗时=" << elapsed_time << "秒" << std::endl;
+    
     return ret;
 }

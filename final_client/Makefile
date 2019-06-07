@@ -1,6 +1,6 @@
 CXXFLAGS := -std=c++11 -Wall -Wextra
 
-SRC_CLIENT := client.cpp
+SRC_CLIENT := ts.cpp
 
 TARGET_CLIENT := $(SRC_CLIENT:.cpp=)
 
