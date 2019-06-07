@@ -2,7 +2,6 @@
 
 using namespace std;
 
-
 void print_help() {
 	std::cout << "使用方法：" << "./ts <初始devid，必须9位> <子进程数（1-50000）>" << std::endl;
 }
@@ -32,11 +31,15 @@ Options parse_arguments(ifstream &ifs, bool is_client) {
 
 		// insert into opts if not already exist
 		opts.emplace(k, v);
-		// print
-		// TODO: log
-		//cout << "k: " << k << endl
-			//<< "v: " << v << endl << endl;
 	}
+
+	// fill in default values
+	if (is_client) {
+		for (const auto &el : default_client_config) {
+			opts.insert(el);
+		}
+	}
+
 
 	return opts;
 }
