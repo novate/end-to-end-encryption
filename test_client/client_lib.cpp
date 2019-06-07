@@ -23,7 +23,7 @@ int loop_client_fork(const Options &opt, int begin_dev_id, int n_devid) {
             waitpid(-1, NULL, 0); // waiting for all children
         }
     }
-    for (int i = 0; i < n_devid - kNumProcess; i++) {
+    for (int i = 0; i < max(n_devid - kNumProcess, n_devid); i++) {
         waitpid(-1, NULL, 0); // waiting for all children
     }
     return 0;
