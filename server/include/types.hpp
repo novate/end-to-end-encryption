@@ -88,10 +88,11 @@ enum class PacketType: uint8_t {
     End = 0xFF
 };
 
-struct VersionRequirePacket {
+
+struct AuthRequestPacket {
     uint8_t pad_1[2];
     uint16_t payload_size;
-    uint16_t version_require;
+    uint16_t version_main;
     uint8_t version_sub1;
     uint8_t version_sub2;
     uint16_t time_gap_fail;
@@ -103,8 +104,12 @@ struct VersionRequirePacket {
     uint32_t svr_time;
 };
 
-struct AuthRequestPacket {
-
+struct VersionRequirePacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+    uint16_t required_version_main;
+    uint8_t required_version_sub1;
+    uint8_t required_version_sub2;
 };
 
 struct AuthResponsePacket {
@@ -131,6 +136,11 @@ struct AuthResponsePacket {
     uint32_t random_num;
 };
 
+struct SysInfoRequestPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
 struct SysInfoResponsePacket {
     uint8_t pad_1[2];   
     uint16_t payload_size;
@@ -141,6 +151,11 @@ struct SysInfoResponsePacket {
     uint32_t freed_memory;
 };
 
+struct ConfInfoRequestPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
 struct ConfInfoResponsePacket {
     uint8_t pad_1[2];   
     uint16_t payload_size;
@@ -149,7 +164,12 @@ struct ConfInfoResponsePacket {
 struct ProcInfoResponsePacket {
     uint8_t pad_1[2];   
     uint16_t payload_size;
-}
+};
+
+struct EtherInfoRequestPacket {
+    uint16_t port;  // Ethernet 0/1 port
+    uint16_t payload_size;
+};
 
 struct EtherInfoResponsePacket {
     uint16_t port;  // Ethernet 0/1 port   
@@ -190,12 +210,22 @@ struct EtherInfoResponsePacket {
     uint32_t recv_multicast;
 };
 
+struct TerInfoRequestPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
 struct TerInfoResponsePacket {
     uint16_t port;
     uint16_t payload_size;
     uint8_t dumb_term[16];
     uint8_t ip_term[254];
     uint16_t term_num;
+};
+
+struct IPTermRequestPacket {
+    uint16_t ttyno;
+    uint16_t payload_size;
 };
 
 struct IPTermResponsePacket {
