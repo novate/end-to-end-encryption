@@ -72,42 +72,34 @@ bool CircularQueue::has_complete_packet() {
     return (size() >= kHeaderSize) && (size() >= kHeaderSize + current_packet_size());
 }
 
-DataPacket CircularQueue::dequeue_packet() {
-    size_t payload_size = current_packet_size();
-    DataPacketHeader header;
+Packet CircularQueue::dequeue_packet() {
+    DynamicPayload payload;
+    size_t packet_size = current_packet_size();
 
+    PacketHeader header;
     // get rid of the header from the buffer
-    dequeue((uint8_t*)&header, 4); // the bit ordering of the 2-3 bytes doesn't really matter
+    dequeue((uint8_t*)&header, kHeaderSize); // the bit ordering of the 2-3 bytes doesn't really matter
 
+    uint8_t* payload_struct;
     size_t struct_size; // TODO
     switch (header.packet_type) {
-    case /* constant-expression */:
-        // TODO: T
-        DynamicPayload<T> payload;
-        /* code */
+    case PacketType::DemoPacket:
+        struct_size = sizeof(DemoPacket);
+        payload_struct = uint8_t(new DemoPacket);
         break;
-
     default:
+        // raise error
         break;
     }
-
-    uint8_t payload_struct[struct_size];
     dequeue(payload_struct, payload_size);
+    payload.first = payload_struct;
 
-    size_t vector_size = header.payload_size - struct_size;
-    // uint8_t payload_vector[vector_size];
-    vector<uint8_t> payload_vector;
-    payload_vector.reserve(vector_size);
-    dequeue(payload_vector.data(), vector_size);
+    size_t vector_size = header.packet_size - kHeaderSize - struct_size;
+    payload.second.reserve(vector_size);
+    dequeue(payload.second.data(), vector_size);
 
-    return make_pair(header, payload);
-
-    // vector<uint8_t> data;//(payload);
-    // for(int i = 0; i < payload_size; i++) {
-    //     data.push_back(payload[i]);
-    // }
-    // // DataPacket dp { *first_byte, data };
-    // DataPacket dp {header.type, data };
-    // return dp;
+    Packet packet { header, payload };
+    return packet;
+    // (DemoPacket*)packet.payload.first
 }
 

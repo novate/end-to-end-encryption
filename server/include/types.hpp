@@ -39,23 +39,30 @@ const unsigned int kHeaderSize = 4; // network packet header size
 const size_t kMaxPacketLength = 10240; // TODO: double check on this number
 const size_t kRecvBufferSize = kMaxPacketLength;
 
-template <class T>
-using DynamicPayload<T> = std::pair<T, std::vector<uint8_t>>;
-
-struct DataPacketHeader {
-    uint8_t direction;
-    uint8_t packet_type;
-    uint16_t payload_size;
+enum class PacketType : uint8_t {
+    DemoPacket = 1;
 };
 
-struct DataPacket {
-    DataPacketHeader header;
+Struct DemoPacket {
+    uint8_t padding[4];
+};
 
-}
+// Convert first to a packet struct
+using DynamicPayload = std::pair<uint8_t*, std::vector<uint8_t>>;
+
+struct PacketHeader {
+    uint8_t direction;
+    uint8_t packet_type;
+    uint16_t packet_size;
+};
+
+struct Packet {
+    PacketHeader header;
+    DynamicPayload payload;
+};
 
 // Used as a buffer in transfer layer, instantiated in Clients
 class CircularQueue {
-
 public:
     CircularQueue(size_t init_size);
     ~CircularQueue();
