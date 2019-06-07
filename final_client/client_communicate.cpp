@@ -321,9 +321,9 @@ bool Client::client_pack_message(PacketType type, const Options & opt) {
         
         case PacketType::USBfileResponse:
         {
-            //load usefile.dat
+            //load usbfile.dat
             char * read_file = new char[8192];
-            string file_name = "usefile.dat";
+            string file_name = "usbfile.dat";
             int size = read_dat(file_name, read_file, 4095);
             if (size < 0) {
                 LOG(Level::ERR) << "No such file: " << file_name << endl;
