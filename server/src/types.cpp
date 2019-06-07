@@ -91,7 +91,7 @@ Packet CircularQueue::dequeue_packet() {
         // raise error
         break;
     }
-    dequeue(payload_struct, payload_size);
+    dequeue(payload_struct, struct_size);
     payload.first = payload_struct;
 
     size_t vector_size = header.packet_size - kHeaderSize - struct_size;
