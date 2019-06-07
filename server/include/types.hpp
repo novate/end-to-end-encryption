@@ -270,6 +270,7 @@ struct Client {
     std::queue< std::vector<uint8_t> > send_buffer;
 
     int socket_fd;
+    string ipaddr;
 };
 
 #endif

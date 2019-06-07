@@ -1,8 +1,8 @@
 #ifndef PRESENTATION_LAYER_H
 #define PRESENTATION_LAYER_H
 #include "types.hpp"
-#include "../include/application.hpp"
-#include "../include/transfer.hpp"
+// #include "application.hpp"
+#include "transfer.hpp"
 
 // A simple class responsible for the conversion of data between the forms of CircularQueue
 // and DataPacket

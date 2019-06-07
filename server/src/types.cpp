@@ -1,7 +1,6 @@
 #include "../include/types.hpp"
 
 using namespace std;
-using namespace fly;
 
 CircularQueue::CircularQueue(size_t init_size) {
     _size = init_size;

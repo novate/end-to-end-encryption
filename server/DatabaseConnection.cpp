@@ -65,7 +65,7 @@ MYSQL_RES* DatabaseConnection::MysqlExecCommand(string command)
 	return result;
 }
 
-bool DatabaseConnection::OnRecvAuthResponse(Packet packet)
+bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client client)
 {
 	AuthResponsePacket &packet_struct = *((AuthResponsePacket *)packet.payload.first);
 	std::stringstream command;
@@ -80,4 +80,5 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet)
 	// time
 	command << "now(), ";
 	// ipaddr
+	command << client.ipaddr;
 }
