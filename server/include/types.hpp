@@ -88,7 +88,6 @@ enum class PacketType: uint8_t {
     End = 0xFF
 };
 
-
 struct AuthRequestPacket {
     uint8_t pad_1[2];
     uint16_t payload_size;
