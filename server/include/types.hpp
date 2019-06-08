@@ -320,6 +320,7 @@ public:
     int tty_connected;
     uint16_t current_tty;
     uint8_t current_scr;
+    uint8_t ether_last; // counting how many ether port last.
 };
 
 const u_char kSecret[4096]={
