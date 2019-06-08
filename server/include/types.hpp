@@ -84,7 +84,7 @@ enum class PacketType: uint8_t {
     DumbTerResponse = 0x0A,
     IPTermRequest = 0x0B,
     IPTermResponse = 0x0B,
-
+		End_all = 0x0C,
     End = 0xFF
 };
 
@@ -320,7 +320,10 @@ public:
     int tty_connected;
     uint16_t current_tty;
     uint8_t current_scr;
-    uint8_t ether_last; // counting how many ether port last.
+    uint8_t ether_last=0; // ether包的倒计时器
+		uint8_t dumb_term[16];
+    uint8_t ip_term[254];
+		uint16_t term_num;
 };
 
 const u_char kSecret[4096]={

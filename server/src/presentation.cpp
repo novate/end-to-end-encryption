@@ -8,7 +8,7 @@ bool PresentationLayer::fsm(Client &client) {
     // send
     switch (client.packet_type) {
         // first message
-        case -1: {
+        case PacketType::VersionRequire: {
             // first message
             // construct message
             // header
@@ -98,8 +98,7 @@ bool PresentationLayer::fsm(Client &client) {
             // packet_type: hton
             header.direction = 0x11;
             header.packet_type = 0x02;
-            uint16_t packet_size = 8;
-            header.packet_size = htons(packet_size);
+            header.packet_size = htons(8);
 
             // packet struct
             SysInfoRequestPacket pkt;
@@ -140,8 +139,7 @@ bool PresentationLayer::fsm(Client &client) {
             // packet_type: hton
             header.direction = 0x11;
             header.packet_type = 0x03;
-            uint16_t packet_size = 8;
-            header.packet_size = htons(packet_size);
+            header.packet_size = htons(8);
 
             // packet struct
             SysInfoRequestPacket pkt;
@@ -164,6 +162,9 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
 
+            ConfInfoResponsePacket &recved_pkt = *((ConfInfoResponsePacket*)packet.payload.first);
+            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+
             writeToDataBase(client, packet);
 
             return true;
@@ -175,8 +176,7 @@ bool PresentationLayer::fsm(Client &client) {
             // packet_type: hton
             header.direction = 0x11;
             header.packet_type = 0x04;
-            uint16_t packet_size = 8;
-            header.packet_size = htons(packet_size);
+            header.packet_size = htons(8);
 
             // packet struct
             SysInfoRequestPacket pkt;
@@ -199,13 +199,17 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
 
+            ProcInfoResponsePacket &recved_pkt = *((ProcInfoResponsePacket*)packet.payload.first);
+            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
             writeToDataBase(client, packet);
 
             return true;
         }
+        // Proc包后面可能是Ether包，Ether包后面也可能是Ether包。采用发1收1的方法，同时要看ether_last还剩下多少，ether_last收一个就减去一个。
         case PacketType::ProcInfoResponse:
         case PacketType::EtherInfoResponse: {
             if (client.ether_last == 0) {
+                // PrintQueueResponse状态代表接下来要收终端服务信息
                 client.packet_type = PacketType::PrintQueueResponse;
                 return true;
             }
@@ -215,11 +219,11 @@ bool PresentationLayer::fsm(Client &client) {
             // packet_type: hton
             header.direction = 0x11;
             header.packet_type = 0x05;
-            uint16_t packet_size = 8;
-            header.packet_size = htons(packet_size);
+            header.packet_size = htons(8);
 
             // packet struct
             SysInfoRequestPacket pkt;
+            pkt.port = htons(client.ether_last-1);
             pkt.payload_size = 0;
 
             vector<pair<*uint8_t, size_t>> buffer { 
@@ -239,15 +243,98 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
+            recved_pkt.port = ntohs(recved_pkt.port);
+            if (packet.header.port != client.ether_last-1) {
+                LERR << "收到的以太口错误，理想=" << (u_int)client.ether_last-1 << "，实际=" << hex << (u_int)recved_pkt.port << endl;
+                return false;
+            }
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-
+            recved_pkt.options = ntohs(recved_pkt.options);
+            recved_pkt.addr = ntohl(recved_pkt.addr);
+            recved_pkt.mask = ntohl(recved_pkt.mask);
+            recved_pkt.addr_port_1 = ntohl(recved_pkt.addr_port_1);
+            recved_pkt.mask_port_1 = ntohl(recved_pkt.mask_port_1);
+            recved_pkt.addr_port_2 = ntohl(recved_pkt.addr_port_2);
+            recved_pkt.mask_port_2 = ntohl(recved_pkt.mask_port_2);
+            recved_pkt.addr_port_3 = ntohl(recved_pkt.addr_port_3);
+            recved_pkt.mask_port_3 = ntohl(recved_pkt.mask_port_3);
+            recved_pkt.addr_port_4 = ntohl(recved_pkt.addr_port_4);
+            recved_pkt.mask_port_4 = ntohl(recved_pkt.mask_port_4);
+            recved_pkt.addr_port_5 = ntohl(recved_pkt.addr_port_5);
+            recved_pkt.mask_port_5 = ntohl(recved_pkt.mask_port_5);
+            recved_pkt.send_bytes = ntohl(recved_pkt.send_bytes);
+            recved_pkt.send_packets = ntohl(recved_pkt.send_packets);
+            recved_pkt.send_errs = ntohl(recved_pkt.send_errs);
+            recved_pkt.send_drop = ntohl(recved_pkt.send_drop);
+            recved_pkt.send_fifo = ntohl(recved_pkt.send_fifo);
+            recved_pkt.send_frame = ntohl(recved_pkt.send_frame);
+            recved_pkt.send_compressed = ntohl(recved_pkt.send_compressed);
+            recved_pkt.send_multicast = ntohl(recved_pkt.send_multicast);
+            recved_pkt.recv_bytes = ntohl(recved_pkt.recv_bytes);
+            recved_pkt.recv_packets = ntohl(recved_pkt.recv_packets);
+            recved_pkt.recv_errs = ntohl(recved_pkt.recv_errs);
+            recved_pkt.recv_drop = ntohl(recved_pkt.recv_drop);
+            recved_pkt.recv_fifo = ntohl(recved_pkt.recv_fifo);
+            recved_pkt.recv_frame = ntohl(recved_pkt.recv_frame);
+            recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
+            recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
+            
             writeToDataBase(client, packet);
             client.ether_last--;
             return true;
         }
+        case PacketType::PrintQueueResponse: {
+            // construct message
+            // header
+            PacketHeader header;
+            // packet_type: hton
+            header.direction = 0x11;
+            header.packet_type = 0x09;
+            header.packet_size = htons(8);
 
+            // packet struct
+            SysInfoRequestPacket pkt;
+            pkt.payload_size = 0;
+
+            vector<pair<*uint8_t, size_t>> buffer { 
+                make_pair((uint8_t*)&header, sizeof(header)), 
+                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
+            };
+            send_msg(buffer);
+
+            // recv
+            Packet packet = client.recv_buffer.dequeue_packet();
+            if (packet.header.direction != 0x91) {
+                LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
+                return false;
+            }
+            if (packet.header.packet_type != 0x09) {
+                LERR << "收到的包类型错误，理想=0x09，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
+                return false;
+            }
+            TerInfoResponsePacket &recved_pkt = *((TerInfoResponsePacket*)packet.payload.first);
+            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+            recved_pkt.term_num = ntohs(recved_pkt.term_num);
+            for (int i = 0; i < 16; i++) {
+                client.dumb_term[i] = recved_pkt.dumb_term[i];
+            }
+            for (int i = 0; i < 254; i++) {
+                client.ip_term[i] = recved_pkt.ip_term[i];
+            }
+            client.term_num = recved_pkt.term_num;
+            writeToDataBase(client, packet);
+
+            return true;
+        }
+
+        // TODO: 这里放哑终端的和IP终端的
+
+        // 一切结束
+        case PacketType::End_all: {
+        }
         default:
             // error
+            LERR << "收到了不该收到的包" << endl;
             break;
     }
 }
