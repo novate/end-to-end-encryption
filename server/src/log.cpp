@@ -1,5 +1,33 @@
 #include "log.hpp"
 
+std::string logify_data(vector<uint8_t> & message) {
+    std::stringstream ss, ss_word;
+    u_int i;
+    for (i = 0; i < message.size(); i++) {
+        if (i % 16 == 0) {
+            ss << ss_word.str() << std::endl;
+            ss_word.clear();    //clear any bits set
+            ss_word.str(std::string());
+            ss << uppercase << ' ' << setw(4) << setfill('0') << hex << i << ": ";
+        }
+        else if (i % 8 == 0) {
+            ss << "- ";
+        }
+        ss << setw(2) << setfill('0') << hex << +message[i] << ' ';
+        // print printable char.
+        char ch = (message[i] > 31 && message[i] < 127) ? message[i] : '.';
+        ss_word << ch;
+    }  
+    if (i%16==0){
+        ss << setw(0) << ss_word.str();
+    }
+    else {
+        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
+        ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
+    }
+    return ss.str();
+}
+
 namespace fly
 {
 

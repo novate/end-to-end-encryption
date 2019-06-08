@@ -1,12 +1,12 @@
 #ifndef INSTANCE_HPP
 #define INSTANCE_HPP
 
-#include "application.hpp"
 #include "presentation.hpp"
 #include "transfer.hpp"
+#include "log.hpp"
+#include "parse_arguments.hpp"
 
-extern ApplicationLayer AppLayerInstance;
 extern PresentationLayer PreLayerInstance;
 extern TransferLayer TransLayerInstance;
 
-#endif
+#endif // INSTANCE_HPP

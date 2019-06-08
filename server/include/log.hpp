@@ -16,16 +16,15 @@
 #define __FILENAME__ __FILE__
 #endif
 
-/*
-#define LOG(level) \
-if (level > fly::Log::get().getLevel()) ; \
-else fly::Log::get().getStream() << fly::Log::get().getTime() << " [" << getpid() << "] "
-*/
-// else fly::Log::get().getStream() << "["#level"]" << "[" << __FILENAME__ << ":" << std::dec << __LINE__ << "] "
 
 #define LOG(level) fly::Log::get().getStream(level) << dec << fly::Log::get().getTime() << " [" << getpid() << "] "
+#define LENV fly::Log::get().getStream() << dec << fly::Log::get().getTime() << " [" << getpid() << "] "
 #define LERR fly::Log::get().getErrStream() << dec << fly::Log::get().getTime() << " [" << getpid() << "] "
 #define LDB fly::Log::get().getDBStream() << dec << fly::Log::get().getTime() << " [" << getpid() << "] "
+
+std::string logify_data(vector<uint8_t> & message);
+
+const u_int kSub = 1024;
 
 namespace fly
 {
