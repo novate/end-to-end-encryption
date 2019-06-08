@@ -86,7 +86,7 @@ Packet CircularQueue::dequeue_packet() {
         struct_size = sizeof(DemoPacket);
         payload_struct = uint8_t(new DemoPacket);
         break;
-        
+
     default:
         // raise error
         break;
@@ -103,3 +103,22 @@ Packet CircularQueue::dequeue_packet() {
     // (DemoPacket*)packet.payload.first
 }
 
+/////////////////////////// Client /////////////////////////////
+int Client::send_msg(vector<pair<*uint8_t, size_t>> buffer) {
+    for (const auto &pr : buffer) {
+        // pr.first: data; pr.second: size;
+        int n;
+        if ((n = send(socketfd, pr.first, pr.second, 0)) == -1) {
+            LOG(Level::ERR) << "send head return error!" << endl;
+            return false;
+        } else if (n == 0) {
+            LOG(Level::ENV) << "remote server has closed connection." << endl;
+            return false;
+        } else {
+            LOG(Level::ERR) << "sent incorrect head length! Expected: 8 "
+                << "sent: " << n << endl;
+            return false;
+        }
+    }
+    return true;
+}
