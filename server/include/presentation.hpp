@@ -3,15 +3,15 @@
 #include "types.hpp"
 #include "transfer.hpp"
 
-enum class SessionState {
-    
-}
+void encrypt_auth(u_int& random_num, u_int& svr_time, uint8_t* auth, const int length);
+bool decrypt_auth(const u_int random_num, uint8_t* auth, const int length);
 
 class PresentationLayer {
 private:
 
 public:
-    void fsm();
+    // if return false, kill the connection of client.
+    bool fsm(Client &client);
 };
 
 #endif
