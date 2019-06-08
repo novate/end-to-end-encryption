@@ -273,7 +273,7 @@ struct EndPacket {
 class CircularQueue {
 public:
     CircularQueue(size_t init_size);
-    ~CircularQueue();
+    // ~CircularQueue();
     uint8_t *data; // debug
 
     bool enqueue(const uint8_t *buf, const size_t size);

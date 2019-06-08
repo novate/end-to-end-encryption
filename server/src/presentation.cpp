@@ -125,6 +125,7 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt2.internal_serial = ntohs(recved_pkt2.internal_serial);
             recved_pkt2.devid = ntohl(recved_pkt2.devid);
             client.ether_last = recved_pkt2.ethnum;
+            DatabaseConnection::get_instance()->OnRecvAuthResponse(packet, &client);
 
             return true;
         }
@@ -142,11 +143,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -164,9 +165,9 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt.nice_cpu_time = ntohl(recved_pkt.nice_cpu_time);
             recved_pkt.system_cpu_time = ntohl(recved_pkt.system_cpu_time);
             recved_pkt.idle_cpu_time = ntohl(recved_pkt.idle_cpu_time);
-            recved_pkt.freed_cpu_time = ntohl(recved_pkt.freed_cpu_time);
+            recved_pkt.freed_memory = ntohl(recved_pkt.freed_memory);
 
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
 
             return true;
         }
@@ -184,11 +185,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -201,7 +202,7 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
 
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
 
             return true;
         }
@@ -219,11 +220,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -236,14 +237,14 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
 
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
 
             return true;
         }
         case PacketType::ProcInfoResponse:
         case PacketType::EtherInfoResponse: {
             if (client.ether_last == 0) {
-                client.packet_type = PacketType::PrintQueueResponse;
+                // client.packet_type = PacketType::PrintQueueResponse;
                 return true;
             }
             // construct message
@@ -259,11 +260,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -278,7 +279,7 @@ bool PresentationLayer::fsm(Client &client) {
             EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
 
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
             client.ether_last--;
             return true;
         }
