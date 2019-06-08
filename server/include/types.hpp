@@ -51,6 +51,7 @@ struct Packet {
 };
 
 enum class PacketType: uint8_t {
+	NullPacket = 0xf0,
     VersionRequire = 0x00,
 
     AuthRequest = 0x01,
@@ -285,7 +286,7 @@ public:
     bool is_empty();
     bool is_full();
     bool has_complete_packet(); // has at least one complete packet
-    Packet dequeue_packet(); // return a complete packet
+    Packet dequeue_packet(bool is_scr = false); // return a complete packet
 
 private:
     size_t _size;
@@ -305,14 +306,15 @@ private:
 public:
     CircularQueue recv_buffer;
     std::queue< std::vector<uint8_t> > send_buffer;
+	int send_msg(std::vector<std::pair<uint8_t*, size_t>> buffer);
 
     int socket_fd;
-    PacketType RecvPacketType;
+    PacketType RecvPacketType = PacketType::NullPacket;
     PacketType SendPacketType;
-    string ipaddr;
+    std::string ipaddr;
     // primary key of devstate_base table
-    string devid;
-    string devno;
+    std::string devid;
+    std::string devno;
     uint16_t ram;
     uint8_t ethnum;
     uint8_t usbnum;

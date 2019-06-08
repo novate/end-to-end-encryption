@@ -34,7 +34,7 @@ public:
     void select_loop(int listener);
 
     // send a packet to client
-    StatusCode send_to_client(int target_socket_fd, const DataPacket packet);
+    StatusCode send_to_client(int target_socket_fd, const Packet packet);
 
     // kick client if password error
     StatusCode remove_client(Client &client);

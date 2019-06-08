@@ -3,12 +3,50 @@
 extern TransferLayer TransLayerInstance;
 
 using namespace std;
+using namespace fly;
 
-bool PresentationLayer::fsm(Client &client) {    
+DatabaseConnection *DatabaseConnection::obj = NULL;
+PresentationLayer::PresentationLayer()
+{
+        // initialize DatabaseConnection class
+        DatabaseConnection::get_instance()->DatabaseInit();
+
+        return;
+}
+
+
+bool PresentationLayer::fsm(Client &client) { 
     // send
-    switch (client.packet_type) {
+    switch (client.RecvPacketType) {
         // first message
-        case -1: {
+        case PacketType::NullPacket: {
+            // Read config
+            ifstream ifs(kFnConfServer);
+            if (!ifs.is_open()) {
+                cout << "找不到该配置文件：" << kFnConfServer << endl;
+                cout << "请将该配置文件和本可执行文件置于同一个目录下" << endl;
+                return -1;
+            }
+            Options opt = parse_arguments(ifs);
+
+            bool log_env[4][4];
+            string s_tp = opt.at("tmp_packet");
+            string s_ts = opt.at("tmp_socket");
+            string s_dp = opt.at("dev_packet");
+            string s_ds = opt.at("dev_socket");
+            for (u_int i = 0; i < 4; i++) {
+                log_env[0][i] = (s_tp[i] == '1');
+            }
+            for (u_int i = 0; i < 4; i++) {
+                log_env[1][i] = (s_ts[i] == '1');
+            }
+            for (u_int i = 0; i < 4; i++) {
+                log_env[2][i] = (s_dp[i] == '1');
+            }
+            for (u_int i = 0; i < 4; i++) {
+                log_env[3][i] = (s_ds[i] == '1');
+            }
+
             // first message
             // construct message
             // header
@@ -26,8 +64,8 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.version_main = htons(0x3);
             pkt.version_sub1 = 0x4;
             pkt.version_sub2 = 0x5;
-            pkt.time_gap_fail = htons(opt.at("设备连接间隔"));
-            pkt.time_gap_succeed = htons(opt.at("设备采样间隔"));
+            pkt.time_gap_fail = htons((unsigned short)stoi(opt.at("设备连接间隔")));
+            pkt.time_gap_succeed = htons((unsigned short)stoi(opt.at("设备采样间隔")));
             pkt.is_empty_tty = 0x1;
             u_int random_num=0, svr_time=0;
             uint8_t auth_str[33] = "yzmond:id*str&to!tongji@by#Auth^";
@@ -38,11 +76,11 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.random_num = htonl(random_num);
             pkt.svr_time = htonl(svr_time);
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -75,7 +113,7 @@ bool PresentationLayer::fsm(Client &client) {
             AuthResponsePacket &recved_pkt2 = *((AuthResponsePacket*)packet2.payload.first);
             recved_pkt2.payload_size = ntohs(recved_pkt2.payload_size);
             recved_pkt2.random_num = ntohl(recved_pkt2.random_num);
-            uint8_t encrypted[104];
+            uint8_t* encrypted;
             encrypted = (uint8_t*)&recved_pkt2.cpu_frequence;
             if (decrypt_auth(recved_pkt2.random_num, encrypted, 104) == false) {
                 LERR << "客户端未通过加密认证，强制下线" << endl;
@@ -87,7 +125,6 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt2.internal_serial = ntohs(recved_pkt2.internal_serial);
             recved_pkt2.devid = ntohl(recved_pkt2.devid);
             client.ether_last = recved_pkt2.ethnum;
-            writeToDataBase(client, packet2);
 
             return true;
         }
