@@ -1,6 +1,7 @@
 #include "../include/transfer.hpp"
 
 using namespace std;
+using namespace fly;
 
 extern PresentationLayer PreLayerInstance;
 
@@ -85,19 +86,11 @@ void TransferLayer::select_loop(int listener) {
                         if (try_recv(el) == StatusCode::OK && el.recv_buffer.size() >= el.recv_buffer.current_packet_size()) {
                             // LOG(Level::Debug) << "Info buffer " << el.recv_buffer.size() << endl;
                             // LOG(Level::Debug) << "SHould be username " << el.recv_buffer.data + 3 << endl;
-                            PreLayerInstance.unpack_DataPacket(&el);
-                            if (el.state == SessionState::Error) {
-                                // remove client here
-                                PreLayerInstance.pack_ErrorOccurs(&el);
+                            if(PreLayerInstance.fsm(el) == false) {
                                 remove_client(el);
-                                PreLayerInstance.broadcast_Offline(&el);
-                                break;
                             }
                         } else {
-                            // remove client here
-                            PreLayerInstance.pack_ErrorOccurs(&el);
                             remove_client(el);
-                            PreLayerInstance.broadcast_Offline(&el);
                             break;
                         }
                     }
@@ -105,9 +98,7 @@ void TransferLayer::select_loop(int listener) {
                     cout << "send buffer transport " << el.send_buffer.size() << endl;
                     if (FD_ISSET(el.socket_fd, &write_fds) && try_send(el) != StatusCode::OK) {
                         // remove client
-                        PreLayerInstance.pack_ErrorOccurs(&el);
                         remove_client(el);
-                        PreLayerInstance.broadcast_Offline(&el);
                     }
                 }
 
@@ -219,57 +210,14 @@ int TransferLayer::get_listener(const short port) {
         LERR << "Server listen error" << endl;
         graceful_return("listen", -1); 
     }
-    LOG(Info) << "Server socket init ok with port: " << port << endl;
-    LOG(Info) << "server_fd: " << server_fd<< endl;
+    // LOG(Info) << "Server socket init ok with port: " << port << endl;
+    // LOG(Info) << "server_fd: " << server_fd<< endl;
     return server_fd;
 }
 
-Client* TransferLayer::find_by_username(const string &username) {
-    auto it = find_if(session_set.begin(), session_set.end(), 
-        [username](const Client &client){ return client.host_username_ == username; });
-    return it == session_set.end() ? nullptr : &(*it);
-}
-
 StatusCode TransferLayer::remove_client(Client &client) {
-    session_set.remove_if([client](const Client &el){ return el.client_id == client.client_id; });
-    LOG(Info) << "Client " << client.client_id << " closed connection\n";
+    session_set.remove_if([client](const Client &el){ return el.socket_fd == client.socket_fd; });
+    // LOG(Info) << "Client " << client.client_id << " closed connection\n";
     
     return StatusCode::OK;
 }
-
-Client * TransferLayer::find_by_username_cnt(Client *client){
-    list<Client>::iterator it = session_set.begin();
-    for( ; it != session_set.end(); it++){
-        if(it->host_username_ == client->host_username_ && it->socket_fd != client->socket_fd)
-            return &(*it);
-    }
-    return NULL;
-}
-
-std::vector<std::string> TransferLayer::find_all_user(Client* host_client) {
-    // vector for username
-    vector<string> namestack_;
-
-    list<Client>::iterator it = session_set.begin();
-    for(; it != session_set.end() && &(*it) != host_client; it++) {
-        namestack_.push_back(it->host_username_);
-    }
-
-    return namestack_;
-}
-
-std::vector<Client *> TransferLayer::find_all_client(Client* host_client) {
-    // vector for username
-    std::vector<Client*> clientstack_;
-
-    list<Client>::iterator it = session_set.begin();
-    for(; it != session_set.end() && &(*it) != host_client; it++) {
-        clientstack_.push_back(&(*it));
-    }
-
-    return clientstack_;
-}
-
-// //return:
-//     NULL   do nothing
-//     Client *  kick Client *

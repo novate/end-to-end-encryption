@@ -2,7 +2,6 @@
 using namespace std;
 using namespace fly;
 
-ApplicationLayer AppLayerInstance;
 PresentationLayer PreLayerInstance;
 TransferLayer TransLayerInstance;
 
@@ -59,7 +58,7 @@ int main()
     }
     Options opt = parse_arguments(ifs);
 
-    const bool log_env[4][4];
+    bool log_env[4][4];
     string s_tp = opt.at("tmp_packet");
     string s_ts = opt.at("tmp_socket");
     string s_dp = opt.at("dev_packet");
@@ -76,9 +75,9 @@ int main()
     for (u_int i = 0; i < 4; i++) {
         log_env[3][i] = (s_ds[i] == '1');
     }
-    const bool print_on_screen = (opt.at("屏幕显示") == "1");
-    const u_int main_log_size = stoi(opt.at("主日志大小") == "1") * 1024;
-    const u_int sub_log_size = stoi(opt.at("分日志大小") == "1") * 1024;
+    bool print_on_screen = (opt.at("屏幕显示") == "1");
+    u_int main_log_size = stoi(opt.at("主日志大小")) * 1024;
+    u_int sub_log_size = stoi(opt.at("分日志大小")) * 1024;
 
     // Log initialization
     ofstream log_stream, err_stream, db_stream;
@@ -93,7 +92,7 @@ int main()
     std::string cur_time(timestamp);
     LENV << "服务器主进程开始，当前时间" << cur_time << std::endl;
 
-    int listener = TransLayerInstance.get_listener(opt.at("监听端口号"));
+    int listener = TransLayerInstance.get_listener(stoi(opt.at("监听端口号")));
     TransLayerInstance.select_loop(listener);
 
     return 0;

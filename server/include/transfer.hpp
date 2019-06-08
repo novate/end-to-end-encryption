@@ -1,9 +1,28 @@
 #ifndef TRANSFER_H
 #define TRANSFER_H
 #include "types.hpp"
+#include "log.hpp"
 #include "./presentation.hpp"
 
+enum class StatusCode : int {
+    OK = 0,
+    OpenFile = -1,
+    LogInit = -2,
+    RecvError = -3,
+    RecvPartial = -4,
+    RecvComplete = -5,
+    SendError = -6,
+    SendPartial = -7,
+    SendComplete = -8,
+    Accept = -9,
+    CreateSocket = -10,
+    Setsockopt = -11,
+    Bind = -12,
+    Listen = -13,
 
+    //present layer error code : start from -20
+    NoCompletePacket = -20
+};
 
 class TransferLayer {
 
@@ -28,14 +47,6 @@ public:
     StatusCode try_recv(Client &client);
 
     StatusCode try_send(Client &client);
-
-    //find client by user name
-    Client* find_by_username(const std::string &username);
-
-    Client* find_by_username_cnt(Client *client);
-
-    std::vector<std::string> find_all_user(Client* host_client);
-    std::vector<Client*> find_all_client(Client* host_client);
 
     // If false, return -1, else return socket code.
     int get_listener(const short port);
