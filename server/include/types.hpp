@@ -300,6 +300,8 @@ struct Client {
     std::queue< std::vector<uint8_t> > send_buffer;
 
     int socket_fd;
+    PacketType RecvPacketType;
+    PacketType SendPacketType;
     string ipaddr;
     // primary key of devstate_base table
     string devid;

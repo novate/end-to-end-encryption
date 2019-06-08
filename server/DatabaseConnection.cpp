@@ -174,6 +174,19 @@ bool DatabaseConnection::OnRecvProcInfoResponse(Packet packet, Client client) {
 	else return true;
 }
 
+string DatabaseConnection::int32_t2ipaddr(int32_t addr) {
+	unsigned char bytes[4];
+    bytes[0] = addr & 0xFF;
+    bytes[1] = (addr >> 8) & 0xFF;
+    bytes[2] = (addr >> 16) & 0xFF;
+    bytes[3] = (addr >> 24) & 0xFF;
+
+	stringstream ss;
+	ss << int(bytes[3]) << "." << int(bytes[2]) << "." << int(bytes[1]) << "." << int(bytes[0]);
+
+	return ss.str();
+}
+
 bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, Client client) {
 	// sql result handler
 	MYSQL_RES *result;
@@ -185,6 +198,22 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, Client client) {
 	if(packet_struct.port == 0x0000)  ethernet_num = '0';
 	else ethernet_num = '1';
 
-	command << "update devstate_base set devstate_base_eth" << ethernet_num << "_ip = ";
-	 
+	command << "update devstate_base set devstate_base_eth" << ethernet_num << "_ip = '";
+	command << int32_t2ipaddr(packet_struct.addr) << "', ";
+	command << "devstate_base_eth" << ethernet_num << "_mask = '";
+	command << int32_t2ipaddr(packet_struct.mask) << "', ";
+	command << "devstate_base_eth" << ethernet_num << "_mac = '";
+	command << std::hex << (int)packet_struct.mac[0] << (int)packet_struct.mac[1] << ":";
+	command << (int)packet_struct.mac[2] << (int)packet_struct.mac[3] << ":";
+	command << (int)packet_struct.mac[4] << (int)packet_struct.mac[5] << "', ";
+	// restore to decimal
+	command << std::dec;
+	command << "devstate_base_eth" << ethernet_num << "_state = " << (packet_struct.state == 0x0001 ? "'UP'" : "'DOWN'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_speed = " << ((packet_struct.options & 0x0001) == 0x0001 ? "'100MB'" : "'10MB'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_duplex = " << ((packet_struct.options & 0x0002) == 0x0002 ? "'全双工'" : "'半双工'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_autonego = " << ((packet_struct.options & 0x0004) == 0x0004 ? "'是'" : "'否'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_txbytes = " << to_string(packet_struct.send_bytes) << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_rxbytes = " << to_string(packet_struct.recv_bytes) << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
 }
