@@ -11,7 +11,7 @@ all:
 	g++ -g -std=c++11 -o server ./src/yzmond.cpp ./src/types.cpp ./src/log.cpp ./src/parse_arguments.cpp ./src/transfer.cpp ./src/presentation.cpp ./src/DatabaseConnection.cpp -lmysqlclient -I /usr/include/ -L/usr/lib64/mysql
 
 clean:
-	$(RM) server
+	$(RM) server *.log
 # 
 # $(OBJ_LIB) : $(HEADER_LIB)
 # 
