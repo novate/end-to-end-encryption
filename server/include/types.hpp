@@ -309,6 +309,9 @@ struct Client {
     uint8_t ethnum;
     uint8_t usbnum;
     uint8_t prnnum;
+    int tty_connected;
+    uint16_t current_tty;
+    uint8_t current_scr;
 };
 
 #endif

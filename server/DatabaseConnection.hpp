@@ -28,12 +28,14 @@ class DatabaseConnection {
 		// bool check_password(string account_name, string password);
 		// bool reset_password(string account_name, string password);
 		bool OnRecvAuthResponse(Packet packet, Client* client);
-		bool OnRecvSysInfoResponse(Packet packet, Client client);
-		bool OnRecvConfInfoResponse(Packet packet, Client client);
-		bool OnRecvProcInfoResponse(Packet packet, Client client);
-		bool OnRecvEtherInfoResponse(Packet packet, Client client);
-		bool OnRecvTermResponse(Packet packet, Client client);
-		bool OnRecvIPTermResponse(Packet packet, Client client);
+		bool OnRecvSysInfoResponse(Packet packet, const Client &client);
+		bool OnRecvConfInfoResponse(Packet packet, const Client &client);
+		bool OnRecvProcInfoResponse(Packet packet, const Client &client);
+		bool OnRecvEtherInfoResponse(Packet packet, const Client &client);
+		bool OnRecvTermResponse(Packet packet, const Client &client);
+		bool OnRecvIPTermResponse(Packet packet, Client &client);
+		bool OnRecvScreenInfoPacket(Packet packet, const Client &client);
+		bool UpdateTTYConnected(const Client &client);
 		string int32_t2ipaddr(int32_t addr);
 		static DatabaseConnection *obj;
 		static DatabaseConnection *get_instance(); 		  	 // return a class instance	
