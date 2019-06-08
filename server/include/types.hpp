@@ -216,7 +216,7 @@ struct TerInfoRequestPacket {
 };
 
 struct TerInfoResponsePacket {
-    uint16_t port;
+    uint8_t pad_1[2];
     uint16_t payload_size;
     uint8_t dumb_term[16];
     uint8_t ip_term[254];
@@ -306,8 +306,10 @@ struct Client {
     // primary key of devstate_base table
     string devid;
     string devno;
-    // ram
     uint16_t ram;
+    uint8_t ethnum;
+    uint8_t usbnum;
+    uint8_t prnnum;
 };
 
 #endif

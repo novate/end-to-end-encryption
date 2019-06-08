@@ -32,6 +32,8 @@ class DatabaseConnection {
 		bool OnRecvConfInfoResponse(Packet packet, Client client);
 		bool OnRecvProcInfoResponse(Packet packet, Client client);
 		bool OnRecvEtherInfoResponse(Packet packet, Client client);
+		bool OnRecvTermResponse(Packet packet, Client client);
+		bool OnRecvIPTermResponse(Packet packet, Client client);
 		string int32_t2ipaddr(int32_t addr);
 		static DatabaseConnection *obj;
 		static DatabaseConnection *get_instance(); 		  	 // return a class instance	

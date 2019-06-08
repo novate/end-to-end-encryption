@@ -104,6 +104,7 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client)
 	command << "'" << to_string(packet_struct.flash) << ", ";
 	// ethnum
 	command << "'" << to_string(packet_struct.ethnum) << ", ";
+	client->ethnum = packet_struct.ethnum;
 	// syncnum
 	command << "'" << to_string(packet_struct.syncnum) << ", ";
 	// asyncnum
@@ -112,8 +113,10 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client)
 	command << "'" << to_string(packet_struct.switchnum) << ", ";
 	// usbnum
 	command << "'" << to_string(packet_struct.usbnum) << ", ";
+	client->usbnum = packet_struct.usbnum;
 	// prnnum
 	command << "'" << to_string(packet_struct.prnnum) << ")";
+	client->prnnum = packet_struct.prnnum;
 
 	result = MysqlExecCommand(command.str());
 	if(result == NULL) return false;
@@ -215,5 +218,38 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, Client client) {
 	command << "devstate_base_eth" << ethernet_num << "_txbytes = " << to_string(packet_struct.send_bytes) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_rxbytes = " << to_string(packet_struct.recv_bytes) << ", ";
-	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.recv_packets);
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvTermResponse(Packet packet, Client client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	TerInfoResponsePacket &packet_struct = *((TerInfoResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+
+	command << "update devstate_base set devstate_base_tty_configed = " << to_string(packet_struct.term_num);
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvIPTermResponse(Packet packet, Client client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	IPTermResponsePacket &packet_struct = *((IPTermResponsePacket *)packet.payload.first);
+	
+	std:stringstream command;
+	command << "insert into devstate_ttyinfo (devstate_ttyinfo_devid, devstate_ttyinfo_devno, devstate_ttyinfo_ttyno, ";
+	command << "devstate_ttyinfo_time, devstate_ttyinfo_readno, devstate_ttyinfo_type, devstate_ttyinfo_state, ";
+	command << "devstate_ttyinfo_ttyip, devstate_ttyinfo_scrnum) values (";
 }
