@@ -247,7 +247,7 @@ bool PresentationLayer::fsm(Client &client) {
         case PacketType::ProcInfoResponse:
         case PacketType::EtherInfoResponse: {
             if (client.ether_last == 0) {
-                client.packet_type = PacketType::PrintQueueResponse;
+                client.RecvPacketType = PacketType::PrintQueueResponse;
                 return true;
             }
             // construct message
@@ -368,6 +368,40 @@ bool PresentationLayer::fsm(Client &client) {
 
         // 一切结束
         case PacketType::End_all: {
+            // construct message
+            // header
+            PacketHeader header;
+            // packet_type: hton
+            header.direction = 0x11;
+            header.packet_type = 0xff;
+            header.packet_size = htons(8);
+
+            // packet struct
+            SysInfoRequestPacket pkt;
+            pkt.payload_size = 0;
+
+            vector<pair<uint8_t*, size_t>> buffer { 
+                make_pair((uint8_t*)&header, sizeof(header)), 
+                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
+            };
+            client.send_msg(buffer);
+
+            // recv
+            Packet packet = client.recv_buffer.dequeue_packet();
+            if (packet.header.direction != 0x91) {
+                LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
+                return false;
+            }
+            if (packet.header.packet_type != 0xff) {
+                LERR << "收到的包类型错误，理想=0xff，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
+                return false;
+            }
+
+            LENV << "服务器收到客户端的应答报文，关闭TCP连接" << endl;
+
+            // writeToDataBase(client, packet);
+
+            return true;
         }
         default:
             // error
