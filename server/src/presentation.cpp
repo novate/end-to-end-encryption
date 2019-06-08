@@ -259,7 +259,7 @@ bool PresentationLayer::fsm(Client &client) {
             header.packet_size = htons(8);
 
             // packet struct
-            SysInfoRequestPacket pkt;
+            EtherInfoRequestPacket pkt;
             pkt.port = htons(client.ether_last-1);
             pkt.payload_size = 0;
 
@@ -281,7 +281,7 @@ bool PresentationLayer::fsm(Client &client) {
             }
             EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
             recved_pkt.port = ntohs(recved_pkt.port);
-            if (packet.header.port != client.ether_last-1) {
+            if (recved_pkt.port != client.ether_last-1) {
                 LERR << "收到的以太口错误，理想=" << (u_int)client.ether_last-1 << "，实际=" << hex << (u_int)recved_pkt.port << endl;
                 return false;
             }
@@ -333,11 +333,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -359,7 +359,7 @@ bool PresentationLayer::fsm(Client &client) {
                 client.ip_term[i] = recved_pkt.ip_term[i];
             }
             client.term_num = recved_pkt.term_num;
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
 
             return true;
         }
@@ -435,61 +435,61 @@ bool decrypt_auth(const u_int random_num, uint8_t* auth, const int length) {
 	return true;
 }
 
-std::string logify_data(vector<uint8_t> & message) {
-    std::stringstream ss, ss_word;
-    u_int i;
-    for (i = 0; i < message.size(); i++) {
-        if (i % 16 == 0) {
-            ss << ss_word.str() << std::endl;
-            ss_word.clear();    //clear any bits set
-            ss_word.str(std::string());
-            ss << ' ' << setw(4) << setfill('0') << hex << i << ": ";
-        }
-        else if (i % 8 == 0) {
-            ss << "- ";
-        }
-        ss << setw(2) << setfill('0') << hex << +message[i] << ' ';
-        // print printable char.
-        char ch = (message[i] > 31 && message[i] < 127) ? message[i] : '.';
-        ss_word << ch;
-    }  
-    if (i%16==0){
-        ss << setw(0) << ss_word.str();
-    }
-    else {
-        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
-        ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
-    }
-    return ss.str();
-}
+// std::string logify_data(vector<uint8_t> & message) {
+//     std::stringstream ss, ss_word;
+//     u_int i;
+//     for (i = 0; i < message.size(); i++) {
+//         if (i % 16 == 0) {
+//             ss << ss_word.str() << std::endl;
+//             ss_word.clear();    //clear any bits set
+//             ss_word.str(std::string());
+//             ss << ' ' << setw(4) << setfill('0') << hex << i << ": ";
+//         }
+//         else if (i % 8 == 0) {
+//             ss << "- ";
+//         }
+//         ss << setw(2) << setfill('0') << hex << +message[i] << ' ';
+//         // print printable char.
+//         char ch = (message[i] > 31 && message[i] < 127) ? message[i] : '.';
+//         ss_word << ch;
+//     }  
+//     if (i%16==0){
+//         ss << setw(0) << ss_word.str();
+//     }
+//     else {
+//         auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
+//         ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
+//     }
+//     return ss.str();
+// }
 
-std::string logify_data(const uint8_t* data, const int len) {
-    std::stringstream ss, ss_word;
-    // ss_word.str(std::string());
-    int i;
-    for (i = 0; i < len; i++) {
-        if (i % 16 == 0) {
-            ss << ss_word.str() << std::endl;
-            ss_word.clear();    //clear any bits set
-            ss_word.str(std::string());
-            ss << ' ' << setw(4) << setfill('0') << hex << uppercase << i << ": ";
-        }
-        else if (i % 8 == 0) {
-            ss << "- ";
-        }
-        ss << setw(2) << setfill('0') << hex << uppercase << +data[i] << ' ';
-        // print printable char.
-        char ch = (data[i] > 31 && data[i] < 127) ? data[i] : '.';
-        ss_word << ch;
-        // ss_word << data[i];
-    }  
-    if (i%16==0){
-        ss << setw(0) << ss_word.str();
-    }
-    else {
-        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
-        // cout << "i: " << i << ", interval: " << interval << endl;
-        ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
-    }
-    return ss.str();
-}
+// std::string logify_data(const uint8_t* data, const int len) {
+//     std::stringstream ss, ss_word;
+//     // ss_word.str(std::string());
+//     int i;
+//     for (i = 0; i < len; i++) {
+//         if (i % 16 == 0) {
+//             ss << ss_word.str() << std::endl;
+//             ss_word.clear();    //clear any bits set
+//             ss_word.str(std::string());
+//             ss << ' ' << setw(4) << setfill('0') << hex << uppercase << i << ": ";
+//         }
+//         else if (i % 8 == 0) {
+//             ss << "- ";
+//         }
+//         ss << setw(2) << setfill('0') << hex << uppercase << +data[i] << ' ';
+//         // print printable char.
+//         char ch = (data[i] > 31 && data[i] < 127) ? data[i] : '.';
+//         ss_word << ch;
+//         // ss_word << data[i];
+//     }  
+//     if (i%16==0){
+//         ss << setw(0) << ss_word.str();
+//     }
+//     else {
+//         auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
+//         // cout << "i: " << i << ", interval: " << interval << endl;
+//         ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
+//     }
+//     return ss.str();
+// }
