@@ -86,6 +86,7 @@ Packet CircularQueue::dequeue_packet() {
         struct_size = sizeof(DemoPacket);
         payload_struct = uint8_t(new DemoPacket);
         break;
+        
     default:
         // raise error
         break;
