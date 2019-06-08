@@ -27,6 +27,8 @@
 #include <sys/socket.h>
 #include <sys/prctl.h>
 
+#include "log.hpp"
+
 #define graceful_return(s, x) {\
     perror((s));\
     return((x)); }

@@ -28,6 +28,37 @@ std::string logify_data(std::vector<uint8_t> & message) {
     return ss.str();
 }
 
+std::string logify_data(const uint8_t* data, const int len) {
+    std::stringstream ss, ss_word;
+    // ss_word.str(std::string());
+    int i;
+    for (i = 0; i < len; i++) {
+        if (i % 16 == 0) {
+            ss << ss_word.str() << std::endl;
+            ss_word.clear();    //clear any bits set
+            ss_word.str(std::string());
+            ss << ' ' << std::setw(4) << std::setfill('0') << std::hex << std::uppercase << i << ": ";
+        }
+        else if (i % 8 == 0) {
+            ss << "- ";
+        }
+        ss << std::setw(2) << std::setfill('0') << std::hex << std::uppercase << +data[i] << ' ';
+        // print printable char.
+        char ch = (data[i] > 31 && data[i] < 127) ? data[i] : '.';
+        ss_word << ch;
+        // ss_word << data[i];
+    }  
+    if (i%16==0){
+        ss << std::setw(0) << ss_word.str();
+    }
+    else {
+        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
+        // cout << "i: " << i << ", interval: " << interval << endl;
+        ss << std::setw(interval) << std::setfill(' ') << ' ' << std::setw(0) << ss_word.str();
+    }
+    return ss.str();
+}
+
 namespace fly
 {
 

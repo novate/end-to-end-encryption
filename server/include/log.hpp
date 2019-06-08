@@ -22,7 +22,7 @@
 #define LERR fly::Log::get().getErrStream() << dec << fly::Log::get().getTime() << " [" << getpid() << "] "
 #define LDB fly::Log::get().getDBStream() << dec << fly::Log::get().getTime() << " [" << getpid() << "] "
 
-std::string logify_data(std::vector<uint8_t> & message);
+std::string logify_data(std::vector<uint8_t> & message);std::string logify_data(const uint8_t* data, const int len);
 
 const u_int kSub = 1024;
 
