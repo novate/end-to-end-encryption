@@ -1,0 +1,296 @@
+#include "log.hpp"
+
+namespace fly
+{
+
+Log& Log::get()
+{
+    static Log m_instance;
+    return m_instance;
+}
+
+
+std::ostream& Log::getStream()
+{
+    if ((u_int)m_logStream->tellp() > m_mainLogSize) {
+        m_logStream->seekp(0, std::ios::beg);
+    }
+    return (m_onScreen ? *tee_logStream : *m_logStream);
+}
+
+std::ostream& Log::getErrStream()
+{
+    if ((u_int)m_errStream->tellp() > m_subLogSize) {
+        m_errStream->seekp(0, std::ios::beg);
+    }
+    return (m_onScreen ? *tee_errStream : *m_errStream);
+}
+
+std::ostream& Log::getDBStream()
+{
+    if ((u_int)m_dbStream->tellp() > m_subLogSize) {
+        m_dbStream->seekp(0, std::ios::beg);
+    }
+    return (m_onScreen ? *tee_dbStream : *m_dbStream);
+}
+
+std::ostream& Log::getStream(Level level)
+{
+    static std::ofstream void_stream("/dev/null", std::ios::out);
+    if ((u_int)m_logStream->tellp() > m_mainLogSize) {
+        m_logStream->seekp(0, std::ios::beg);
+    }
+    switch(level) {
+        case Level::Debug:
+        {
+            if (level != Level::Debug) {
+                return void_stream;
+                break;
+            }
+            else {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+                break;
+            }
+        }
+        case Level::TP_S:
+        {
+            if (m_logEnv[0][0]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::TP_R:
+        {
+            if (m_logEnv[0][1]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::TP_SD:
+        {
+            if (m_logEnv[0][2]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::TP_RD:
+        {
+            if (m_logEnv[0][3]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::TS_S:
+        {
+            if (m_logEnv[1][0]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::TS_R:
+        {
+            if (m_logEnv[1][1]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::TS_SD:
+        {
+            if (m_logEnv[1][2]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::TS_RD:
+        {
+            if (m_logEnv[1][3]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DP_S:
+        {
+            if (m_logEnv[2][0]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DP_R:
+        {
+            if (m_logEnv[2][1]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DP_SD:
+        {
+            if (m_logEnv[2][2]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DP_RD:
+        {
+            if (m_logEnv[2][3]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DS_S:
+        {
+            if (m_logEnv[3][0]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DS_R:
+        {
+            if (m_logEnv[3][1]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DS_SD:
+        {
+            if (m_logEnv[3][2]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }
+        case Level::DS_RD:
+        {
+            if (m_logEnv[3][3]) {
+                return (m_onScreen ? *tee_logStream : *m_logStream);
+            }
+            else {
+                return void_stream;
+            }
+            break;
+        }        
+        default:
+        {
+            return void_stream;
+            break;
+        } 
+    }
+}
+
+void Log::setLogConf(std::ostream& log_stream, std::ostream& err_stream, std::ostream& db_stream, const bool (*log_env)[4], const bool on_screen, const u_int main_log_size, const u_int sub_log_size)
+{
+    m_logStream = &log_stream;
+    m_errStream = &err_stream;
+    m_dbStream = &db_stream;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            m_logEnv[i][j] = log_env[i][j];
+        }
+    }
+    static TeeStream tee_log(std::cout, *m_logStream);
+    static TeeStream tee_err(std::cout, *m_errStream); 
+    static TeeStream tee_db(std::cout, *m_dbStream);
+    if(on_screen) {
+        m_onScreen = true;
+        tee_logStream = &tee_log;
+        tee_errStream = &tee_err;
+        tee_dbStream = &tee_db;
+    }
+    m_mainLogSize = main_log_size;
+    m_subLogSize = sub_log_size;
+}
+
+Log& Log::setLevel(Level level)
+{
+    m_logLevel = level;
+    return *this;
+}
+
+Level Log::getLevel()
+{
+    return m_logLevel;
+}
+
+std::string Log::getTime()
+{
+    time_t now = time(0);
+    char timestamp[100] = "";
+    strftime(timestamp, 100, "%F %T", localtime(&now));
+    std::string cur_time(timestamp);
+    return cur_time;
+}
+
+TeeBuf::TeeBuf(std::streambuf * sb1, std::streambuf * sb2) :
+    m_sb1(sb1),
+    m_sb2(sb2)
+{}
+int TeeBuf::overflow(int c)
+{
+    if (c == EOF)
+    {
+        return !EOF;
+    }
+    else
+    {
+        int const r1 = m_sb1->sputc(c);
+        int const r2 = m_sb2->sputc(c);
+        return r1 == EOF || r2 == EOF ? EOF : c;
+    }
+}
+
+int TeeBuf::sync()
+{
+    int const r1 = m_sb1->pubsync();
+    int const r2 = m_sb2->pubsync();
+    return r1 == 0 && r2 == 0 ? 0 : -1;
+}
+
+TeeStream::TeeStream(std::ostream& o1, std::ostream& o2) :
+    std::ostream(&m_tbuf),
+    m_tbuf(o1.rdbuf(), o2.rdbuf())
+{}
+
+}
