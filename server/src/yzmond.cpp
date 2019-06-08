@@ -78,6 +78,11 @@ int main()
     bool print_on_screen = (opt.at("屏幕显示") == "1");
     u_int main_log_size = stoi(opt.at("主日志大小")) * 1024;
     u_int sub_log_size = stoi(opt.at("分日志大小")) * 1024;
+    string db_ip = opt.at("服务器IP地址");
+    u_int db_port = stoi(opt.at("服务器端口号"));
+    string db_name = opt.at("数据库名");
+    string db_username = opt.at("用户名");
+    string db_pwd = opt.at("用户口令");
 
     // Log initialization
     ofstream log_stream, err_stream, db_stream;
