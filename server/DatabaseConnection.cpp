@@ -104,6 +104,7 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client)
 	command << "'" << to_string(packet_struct.flash) << ", ";
 	// ethnum
 	command << "'" << to_string(packet_struct.ethnum) << ", ";
+	client->ethnum = packet_struct.ethnum;
 	// syncnum
 	command << "'" << to_string(packet_struct.syncnum) << ", ";
 	// asyncnum
@@ -112,15 +113,17 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client)
 	command << "'" << to_string(packet_struct.switchnum) << ", ";
 	// usbnum
 	command << "'" << to_string(packet_struct.usbnum) << ", ";
+	client->usbnum = packet_struct.usbnum;
 	// prnnum
 	command << "'" << to_string(packet_struct.prnnum) << ")";
+	client->prnnum = packet_struct.prnnum;
 
 	result = MysqlExecCommand(command.str());
 	if(result == NULL) return false;
 	else return true;
 }
 
-bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet, Client client) {
+bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet, const Client &client) {
 	double cpu_used, sdram_used;
 	// sql result handler
 	MYSQL_RES *result;
@@ -142,7 +145,7 @@ bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet, Client client) {
 	else return true;
 }
 
-bool DatabaseConnection::OnRecvConfInfoResponse(Packet packet, Client client) {
+bool DatabaseConnection::OnRecvConfInfoResponse(Packet packet, const Client &client) {
 	// sql result handler
 	MYSQL_RES *result;
 
@@ -158,7 +161,7 @@ bool DatabaseConnection::OnRecvConfInfoResponse(Packet packet, Client client) {
 	else return true;
 }
 
-bool DatabaseConnection::OnRecvProcInfoResponse(Packet packet, Client client) {
+bool DatabaseConnection::OnRecvProcInfoResponse(Packet packet, const Client &client) {
 	// sql result handler
 	MYSQL_RES *result;
 
@@ -187,7 +190,7 @@ string DatabaseConnection::int32_t2ipaddr(int32_t addr) {
 	return ss.str();
 }
 
-bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, Client client) {
+bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, const Client &client) {
 	// sql result handler
 	MYSQL_RES *result;
 
@@ -215,5 +218,113 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, Client client) {
 	command << "devstate_base_eth" << ethernet_num << "_txbytes = " << to_string(packet_struct.send_bytes) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_rxbytes = " << to_string(packet_struct.recv_bytes) << ", ";
-	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.recv_packets);
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvTermResponse(Packet packet, const Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	TerInfoResponsePacket &packet_struct = *((TerInfoResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+
+	command << "update devstate_base set devstate_base_tty_configed = " << to_string(packet_struct.term_num);
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvIPTermResponse(Packet packet, Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	IPTermResponsePacket &packet_struct = *((IPTermResponsePacket *)packet.payload.first);
+	
+	bool is_dump = (packet.header.packet_type == 0x0a);
+
+	std:stringstream command;
+	command << "insert into devstate_ttyinfo (devstate_ttyinfo_devid, devstate_ttyinfo_devno, devstate_ttyinfo_ttyno, ";
+	command << "devstate_ttyinfo_time, devstate_ttyinfo_readno, devstate_ttyinfo_type, devstate_ttyinfo_state, ";
+	command << "devstate_ttyinfo_ttyip, devstate_ttyinfo_scrnum) values (";
+	command << "'" << client.devid << "', ";
+	command << "'" << client.devno << "', ";
+	command << (is_dump ? "9" + to_string(packet_struct.ttyno) : to_string(packet_struct.ttyno)) << ", ";
+	client.current_tty = (is_dump ? 900 + packet_struct.ttyno : packet_struct.ttyno);
+	client.current_scr = packet_struct.active_screen;
+	command << "now(), ";
+	command << to_string(packet_struct.readno) << ", ";
+	std::string tty_type(packet_struct.type, packet_struct.type + 12);
+	command << "'" << tty_type << "', ";
+	std::string tty_state(packet_struct.state, packet_struct.state + 12);
+	command << "'" << tty_state << "', ";
+	command << "'" << int32_t2ipaddr(packet_struct.ttyip) << "', ";
+	command << to_string(packet_struct.screen_num) << ")";
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvScreenInfoPacket(Packet packet, const Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	ScreenInfoPacket &packet_struct = *((ScreenInfoPacket*)packet.payload.first);
+
+	std::stringstream command;
+	command << "insert into devstate_scrinfo (devstate_scrinfo_devid, devstate_scrinfo_devno, devstate_scrinfo_ttyno, ";
+	command << "devstate_scrinfo_scrno, devstate_scrinfo_time, devstate_scrinfo_is_current, devstate_scrinfo_protocol, ";
+	command << "devstate_scrinfo_serverip, devstate_scrinfo_serverport, devstate_scrinfo_state, devstate_scrinfo_ttytype, ";
+	command << "devstate_scrinfo_tx_server, devstate_scrinfo_rx_server, devstate_scrinfo_tx_terminal, devstate_scrinfo_rx_terminal, ";
+	command << "devstate_scrinfo_ping_min, devstate_scrinfo_ping_avg, devstate_scrinfo_ping_max) values (";
+	command << "'" << client.devid << "', ";
+	command << "'" << client.devno << "', ";
+	command << to_string(client.current_tty) << ", ";
+	command << to_string(packet_struct.screen_no) << ", ";
+	command << "now(), ";
+	command << (client.current_scr == packet_struct.screen_no + 1 ? "'*'" : "NULL") << ", ";
+	std::string proto(packet_struct.proto, packet_struct.proto + 12);
+	command << "'" << proto << "', ";
+	command << "'" << int32_t2ipaddr(packet_struct.server_ip) << "', ";
+	command << to_string(packet_struct.server_port) << ", ";
+	std::string scr_state(packet_struct.state, packet_struct.state + 8);
+	command << "'" << scr_state << "', ";
+	std::string tty_type(packet_struct.tty_type, packet_struct.tty_type + 12);
+	command << "'" << tty_type << "', ";
+	command << to_string(packet_struct.send_server_byte) << ", ";
+	command << to_string(packet_struct.recv_server_byte) << ", ";
+	command << to_string(packet_struct.send_term_byte) << ", ";
+	command << to_string(packet_struct.recv_term_byte) << ", ";
+	float ping_ming = packet_struct.ping_min / 10.0;
+	float ping_max = packet_struct.ping_max / 10.0;
+	float ping_avg = packet_struct.ping_avg / 10.0;
+	command << ping_ming << ", ";
+	command << ping_avg << ", ";
+	command << ping_max << ", ";
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::UpdateTTYConnected(const Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+	
+	std::stringstream command;
+
+	command << "update devstate_base set devstate_base_tty_connected = " << to_string(client.tty_connected);
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
 }

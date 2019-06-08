@@ -52,27 +52,27 @@ struct Packet {
 
 enum class PacketType: uint8_t {
     VersionRequire = 0x00,
-    
+
     AuthRequest = 0x01,
     AuthResponse = 0x01,
-    
+
     SysInfoRequest = 0x02,
     SysInfoResponse = 0x02,
-    
+
     ConfInfoRequest = 0x03,
     ConfInfoResponse = 0x03,
-    
+
     ProcInfoRequest = 0x04,
     ProcInfoResponse = 0x04,
-    
+
     EtherInfoRequest = 0x05,
     EtherInfoResponse = 0x05,
-    
+
     USBInfoRequest = 0x07,
     USBInfoResponse = 0x07,
     USBfileRequest = 0x0C,
     USBfileResponse = 0x0C,
-    
+
     PrintDevRequest = 0x08,
     PrintDevResponse = 0x08,
     PrintQueueRequest = 0x0D,
@@ -141,12 +141,12 @@ struct SysInfoRequestPacket {
 };
 
 struct SysInfoResponsePacket {
-    uint8_t pad_1[2];   
+    uint8_t pad_1[2];
     uint16_t payload_size;
     uint32_t user_cpu_time;
     uint32_t nice_cpu_time;
     uint32_t system_cpu_time;
-    uint32_t idle_cpu_time; 
+    uint32_t idle_cpu_time;
     uint32_t freed_memory;
 };
 
@@ -156,7 +156,7 @@ struct ConfInfoRequestPacket {
 };
 
 struct ConfInfoResponsePacket {
-    uint8_t pad_1[2];   
+    uint8_t pad_1[2];
     uint16_t payload_size;
 };
 
@@ -166,7 +166,7 @@ struct ProcInfoRequestPacket {
 };
 
 struct ProcInfoResponsePacket {
-    uint8_t pad_1[2];   
+    uint8_t pad_1[2];
     uint16_t payload_size;
 };
 
@@ -176,7 +176,7 @@ struct EtherInfoRequestPacket {
 };
 
 struct EtherInfoResponsePacket {
-    uint16_t port;  // Ethernet 0/1 port   
+    uint16_t port;  // Ethernet 0/1 port
     uint16_t payload_size;
     uint8_t if_exist;
     uint8_t if_set;
@@ -220,7 +220,7 @@ struct TerInfoRequestPacket {
 };
 
 struct TerInfoResponsePacket {
-    uint16_t port;
+    uint8_t pad_1[2];
     uint16_t payload_size;
     uint8_t dumb_term[16];
     uint8_t ip_term[254];
@@ -241,7 +241,7 @@ struct IPTermResponsePacket {
     uint8_t screen_num;
     uint32_t ttyip;
     uint8_t type[12];
-    uint8_t state[8]; 
+    uint8_t state[8];
 };
 
 struct ScreenInfoPacket {
@@ -297,9 +297,12 @@ struct Client {
     Client(int socket_fd, size_t buffer_size) :
         socket_fd(socket_fd),
         recv_buffer(buffer_size)
-    {}
+    {};
     // ~Client(); // Should call the destructor of the underlying CircularQueue
 
+private:
+
+public:
     CircularQueue recv_buffer;
     std::queue< std::vector<uint8_t> > send_buffer;
 
@@ -310,10 +313,13 @@ struct Client {
     // primary key of devstate_base table
     string devid;
     string devno;
-    // ram
     uint16_t ram;
-    
-    u_int ether_last = 0;
+    uint8_t ethnum;
+    uint8_t usbnum;
+    uint8_t prnnum;
+    int tty_connected;
+    uint16_t current_tty;
+    uint8_t current_scr;
 };
 
 const u_char kSecret[4096]={
