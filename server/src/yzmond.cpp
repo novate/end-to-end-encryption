@@ -2,7 +2,6 @@
 using namespace std;
 using namespace fly;
 
-ApplicationLayer AppLayerInstance;
 PresentationLayer PreLayerInstance;
 TransferLayer TransLayerInstance;
 
@@ -98,7 +97,7 @@ int main()
     std::string cur_time(timestamp);
     LENV << "服务器主进程开始，当前时间" << cur_time << std::endl;
 
-    int listener = TransLayerInstance.get_listener(opt.at("监听端口号"));
+    int listener = TransLayerInstance.get_listener(stoi(opt.at("监听端口号")));
     TransLayerInstance.select_loop(listener);
 
     return 0;

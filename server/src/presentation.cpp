@@ -3,12 +3,50 @@
 extern TransferLayer TransLayerInstance;
 
 using namespace std;
+using namespace fly;
 
-bool PresentationLayer::fsm(Client &client) {    
+DatabaseConnection *DatabaseConnection::obj = NULL;
+PresentationLayer::PresentationLayer()
+{
+        // initialize DatabaseConnection class
+        DatabaseConnection::get_instance()->DatabaseInit();
+
+        return;
+}
+
+
+bool PresentationLayer::fsm(Client &client) { 
     // send
-    switch (client.packet_type) {
+    switch (client.RecvPacketType) {
         // first message
-        case PacketType::VersionRequire: {
+        case PacketType::NullPacket: {
+            // Read config
+            ifstream ifs(kFnConfServer);
+            if (!ifs.is_open()) {
+                cout << "找不到该配置文件：" << kFnConfServer << endl;
+                cout << "请将该配置文件和本可执行文件置于同一个目录下" << endl;
+                return -1;
+            }
+            Options opt = parse_arguments(ifs);
+
+            bool log_env[4][4];
+            string s_tp = opt.at("tmp_packet");
+            string s_ts = opt.at("tmp_socket");
+            string s_dp = opt.at("dev_packet");
+            string s_ds = opt.at("dev_socket");
+            for (u_int i = 0; i < 4; i++) {
+                log_env[0][i] = (s_tp[i] == '1');
+            }
+            for (u_int i = 0; i < 4; i++) {
+                log_env[1][i] = (s_ts[i] == '1');
+            }
+            for (u_int i = 0; i < 4; i++) {
+                log_env[2][i] = (s_dp[i] == '1');
+            }
+            for (u_int i = 0; i < 4; i++) {
+                log_env[3][i] = (s_ds[i] == '1');
+            }
+
             // first message
             // construct message
             // header
@@ -26,8 +64,8 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.version_main = htons(0x3);
             pkt.version_sub1 = 0x4;
             pkt.version_sub2 = 0x5;
-            pkt.time_gap_fail = htons(opt.at("设备连接间隔"));
-            pkt.time_gap_succeed = htons(opt.at("设备采样间隔"));
+            pkt.time_gap_fail = htons((unsigned short)stoi(opt.at("设备连接间隔")));
+            pkt.time_gap_succeed = htons((unsigned short)stoi(opt.at("设备采样间隔")));
             pkt.is_empty_tty = 0x1;
             u_int random_num=0, svr_time=0;
             uint8_t auth_str[33] = "yzmond:id*str&to!tongji@by#Auth^";
@@ -38,11 +76,11 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.random_num = htonl(random_num);
             pkt.svr_time = htonl(svr_time);
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -75,7 +113,7 @@ bool PresentationLayer::fsm(Client &client) {
             AuthResponsePacket &recved_pkt2 = *((AuthResponsePacket*)packet2.payload.first);
             recved_pkt2.payload_size = ntohs(recved_pkt2.payload_size);
             recved_pkt2.random_num = ntohl(recved_pkt2.random_num);
-            uint8_t encrypted[104];
+            uint8_t* encrypted;
             encrypted = (uint8_t*)&recved_pkt2.cpu_frequence;
             if (decrypt_auth(recved_pkt2.random_num, encrypted, 104) == false) {
                 LERR << "客户端未通过加密认证，强制下线" << endl;
@@ -87,7 +125,7 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt2.internal_serial = ntohs(recved_pkt2.internal_serial);
             recved_pkt2.devid = ntohl(recved_pkt2.devid);
             client.ether_last = recved_pkt2.ethnum;
-            writeToDataBase(client, packet2);
+            DatabaseConnection::get_instance()->OnRecvAuthResponse(packet, &client);
 
             return true;
         }
@@ -104,11 +142,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -126,9 +164,9 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt.nice_cpu_time = ntohl(recved_pkt.nice_cpu_time);
             recved_pkt.system_cpu_time = ntohl(recved_pkt.system_cpu_time);
             recved_pkt.idle_cpu_time = ntohl(recved_pkt.idle_cpu_time);
-            recved_pkt.freed_cpu_time = ntohl(recved_pkt.freed_cpu_time);
+            recved_pkt.freed_memory = ntohl(recved_pkt.freed_memory);
 
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
 
             return true;
         }
@@ -145,11 +183,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -165,7 +203,7 @@ bool PresentationLayer::fsm(Client &client) {
             ConfInfoResponsePacket &recved_pkt = *((ConfInfoResponsePacket*)packet.payload.first);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
 
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
 
             return true;
         }
@@ -182,11 +220,11 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -201,7 +239,7 @@ bool PresentationLayer::fsm(Client &client) {
 
             ProcInfoResponsePacket &recved_pkt = *((ProcInfoResponsePacket*)packet.payload.first);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
 
             return true;
         }
@@ -209,7 +247,6 @@ bool PresentationLayer::fsm(Client &client) {
         case PacketType::ProcInfoResponse:
         case PacketType::EtherInfoResponse: {
             if (client.ether_last == 0) {
-                // PrintQueueResponse状态代表接下来要收终端服务信息
                 client.packet_type = PacketType::PrintQueueResponse;
                 return true;
             }
@@ -226,11 +263,11 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.port = htons(client.ether_last-1);
             pkt.payload_size = 0;
 
-            vector<pair<*uint8_t, size_t>> buffer { 
+            vector<pair<uint8_t*, size_t>> buffer { 
                 make_pair((uint8_t*)&header, sizeof(header)), 
                 make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             };
-            send_msg(buffer);
+            client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -279,7 +316,7 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
             recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
             
-            writeToDataBase(client, packet);
+            // writeToDataBase(client, packet);
             client.ether_last--;
             return true;
         }
@@ -362,4 +399,63 @@ bool decrypt_auth(const u_int random_num, uint8_t* auth, const int length) {
         pos = (pos+1)%4093;
     }
 	return true;
+}
+
+std::string logify_data(vector<uint8_t> & message) {
+    std::stringstream ss, ss_word;
+    u_int i;
+    for (i = 0; i < message.size(); i++) {
+        if (i % 16 == 0) {
+            ss << ss_word.str() << std::endl;
+            ss_word.clear();    //clear any bits set
+            ss_word.str(std::string());
+            ss << ' ' << setw(4) << setfill('0') << hex << i << ": ";
+        }
+        else if (i % 8 == 0) {
+            ss << "- ";
+        }
+        ss << setw(2) << setfill('0') << hex << +message[i] << ' ';
+        // print printable char.
+        char ch = (message[i] > 31 && message[i] < 127) ? message[i] : '.';
+        ss_word << ch;
+    }  
+    if (i%16==0){
+        ss << setw(0) << ss_word.str();
+    }
+    else {
+        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
+        ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
+    }
+    return ss.str();
+}
+
+std::string logify_data(const uint8_t* data, const int len) {
+    std::stringstream ss, ss_word;
+    // ss_word.str(std::string());
+    int i;
+    for (i = 0; i < len; i++) {
+        if (i % 16 == 0) {
+            ss << ss_word.str() << std::endl;
+            ss_word.clear();    //clear any bits set
+            ss_word.str(std::string());
+            ss << ' ' << setw(4) << setfill('0') << hex << uppercase << i << ": ";
+        }
+        else if (i % 8 == 0) {
+            ss << "- ";
+        }
+        ss << setw(2) << setfill('0') << hex << uppercase << +data[i] << ' ';
+        // print printable char.
+        char ch = (data[i] > 31 && data[i] < 127) ? data[i] : '.';
+        ss_word << ch;
+        // ss_word << data[i];
+    }  
+    if (i%16==0){
+        ss << setw(0) << ss_word.str();
+    }
+    else {
+        auto interval = 3 * (16 - (i % 16)) + (i % 16 > 8 ? 0 : 2);
+        // cout << "i: " << i << ", interval: " << interval << endl;
+        ss << setw(interval) << setfill(' ') << ' ' << setw(0) << ss_word.str();
+    }
+    return ss.str();
 }

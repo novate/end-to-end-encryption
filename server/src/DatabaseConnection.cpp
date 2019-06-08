@@ -1,4 +1,4 @@
-#include "./DatabaseConnection.hpp"
+#include "../include/DatabaseConnection.hpp"
 
 const char* kDatabaseName = "db1652289";
 const char* kDatabaseUserId= "u1652289";
