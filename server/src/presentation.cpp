@@ -1,8 +1,4 @@
-#ifndef PRESENT_H
-#define PRESENT_H
 #include "../include/presentation.hpp"
-// #include "../include/application.hpp"
-// #include "../include/transfer.hpp"
 
 extern ApplicationLayer AppLayerInstance;
 extern TransferLayer TransLayerInstance;
@@ -522,5 +518,3 @@ void PresentationLayer::unpack_DoubleCoord(DataPacket packet, Message_To_App * m
 
     return;
 }
-
-#endif
