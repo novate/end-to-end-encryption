@@ -59,7 +59,7 @@ int main()
     }
     Options opt = parse_arguments(ifs);
 
-    const bool log_env[4][4];
+    bool log_env[4][4];
     string s_tp = opt.at("tmp_packet");
     string s_ts = opt.at("tmp_socket");
     string s_dp = opt.at("dev_packet");
@@ -76,9 +76,14 @@ int main()
     for (u_int i = 0; i < 4; i++) {
         log_env[3][i] = (s_ds[i] == '1');
     }
-    const bool print_on_screen = (opt.at("屏幕显示") == "1");
-    const u_int main_log_size = stoi(opt.at("主日志大小") == "1") * 1024;
-    const u_int sub_log_size = stoi(opt.at("分日志大小") == "1") * 1024;
+    bool print_on_screen = (opt.at("屏幕显示") == "1");
+    u_int main_log_size = stoi(opt.at("主日志大小")) * 1024;
+    u_int sub_log_size = stoi(opt.at("分日志大小")) * 1024;
+    string db_ip = opt.at("服务器IP地址");
+    u_int db_port = stoi(opt.at("服务器端口号"));
+    string db_name = opt.at("数据库名");
+    string db_username = opt.at("用户名");
+    string db_pwd = opt.at("用户口令");
 
     // Log initialization
     ofstream log_stream, err_stream, db_stream;
