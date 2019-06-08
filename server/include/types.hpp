@@ -301,6 +301,11 @@ struct Client {
 
     int socket_fd;
     string ipaddr;
+    // primary key of devstate_base table
+    string devid;
+    string devno;
+    // ram
+    uint16_t ram;
 };
 
 #endif

@@ -65,7 +65,7 @@ MYSQL_RES* DatabaseConnection::MysqlExecCommand(string command)
 	return result;
 }
 
-bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client client)
+bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client)
 {
 	// sql result handler
 	MYSQL_RES *result;
@@ -78,12 +78,14 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client client)
 
 	// devid
 	command << "'" << to_string(packet_struct.devid) << "', ";
+	client->devid = to_string(packet_struct.devid);
 	// devno
 	command << "'" << to_string(packet_struct.devno) << "', ";
+	client->devno = to_string(packet_struct.devno);
 	// time
 	command << "now(), ";
 	// ipaddr
-	command << "'" << client.ipaddr << "', ";
+	command << "'" << client->ipaddr << "', ";
 	// sid
 	std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
 	command << "'" << group_serial << to_string(packet_struct.internal_serial) << "', ";
@@ -97,6 +99,7 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client client)
 	command << "'" << to_string(packet_struct.cpu_frequence) << "', ";
 	// sdram
 	command << "'" << to_string(packet_struct.ram) << "', ";
+	client->ram = packet_struct.ram;
 	// flash
 	command << "'" << to_string(packet_struct.flash) << ", ";
 	// ethnum
@@ -117,15 +120,71 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client client)
 	else return true;
 }
 
-bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet) {
-	float cpu_used;
+bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet, Client client) {
+	double cpu_used, sdram_used;
 	// sql result handler
 	MYSQL_RES *result;
 
 	SysInfoResponsePacket &packet_struct = *((SysInfoResponsePacket*)packet.payload.first);
 
-	cpu_used = (packet_struct.user_cpu_time + packet_struct.system_cpu_time) / (packet_struct.user_cpu_time + packet_struct.nice_cpu_time +packet_struct.idle_cpu_time);
+	cpu_used = ((double)(packet_struct.user_cpu_time + packet_struct.system_cpu_time)) / (packet_struct.user_cpu_time + packet_struct.nice_cpu_time +packet_struct.idle_cpu_time);
+	sdram_used = ((double)packet_struct.freed_memory) / (client.ram);
 
 	std::stringstream command;
-	command << fixed << setprecision(2);
+	command << "update devstate_base set devstate_base_cpu_used = ";
+	command << fixed << setprecision(2) << cpu_used;
+	command << ", devstate_base_sdram_used = ";
+	command << fixed << setprecision(2) << sdram_used;
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvConfInfoResponse(Packet packet, Client client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	// ConfInfoResponsePacket &packet_struct = *((ConfInfoResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+	command << "update devstate_base set devstate_base_config = '";
+	command << packet.payload.second.data() << "'";
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvProcInfoResponse(Packet packet, Client client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	// ProcInfoResponsePacket &packet_struct = *((ProcInfoResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+	command << "update devstate_base set devstate_base_process = '";
+	command << packet.payload.second.data() << "'";
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, Client client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	EtherInfoResponsePacket &packet_struct = *((EtherInfoResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+	char ethernet_num;
+	if(packet_struct.port == 0x0000)  ethernet_num = '0';
+	else ethernet_num = '1';
+
+	command << "update devstate_base set devstate_base_eth" << ethernet_num << "_ip = ";
+	 
 }
