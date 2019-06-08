@@ -16,7 +16,7 @@ CircularQueue::CircularQueue(size_t init_size) {
 
 bool CircularQueue::enqueue(const uint8_t *buf, const size_t size) {
     if (_num_free_bytes < size) {
-        LOG(Debug) << "queue overflow" << endl;
+        LOG(Level::Debug) << "queue overflow" << endl;
         //cerr << "DEBUG: queue overflow" << endl;
         return false;
     }
@@ -30,7 +30,7 @@ bool CircularQueue::enqueue(const uint8_t *buf, const size_t size) {
 
 bool CircularQueue::dequeue(uint8_t *buf, const size_t size) {
     if (_num_free_bytes + size > _size) {
-        LOG(Debug) << "queue underflow" << endl;
+        LOG(Level::Debug) << "queue underflow" << endl;
         return false;
     }
     for (size_t i = 0; i < size; i++) {
