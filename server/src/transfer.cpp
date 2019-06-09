@@ -70,8 +70,8 @@ void TransferLayer::select_loop(int listener) {
         if (listener > fdmax) fdmax = listener; 
 
         int rv = select(fdmax+1, &read_fds, &write_fds, NULL, NULL);
-        // LOG(Level::Debug) << "select: " << rv << endl;
-        // LOG(Level::Debug) << "fdmax: " << fdmax << endl;
+        LOG(Level::Debug) << "select: " << rv << endl;
+        LOG(Level::Debug) << "fdmax: " << fdmax << endl;
         switch (rv) {
             case -1:
                 LERR << "Select in main loop\n";
@@ -84,8 +84,8 @@ void TransferLayer::select_loop(int listener) {
                 for (auto &el : session_set) {
                     if (FD_ISSET(el.socket_fd, &read_fds)) {
                         if (try_recv(el) == StatusCode::OK && el.recv_buffer.size() >= el.recv_buffer.current_packet_size()) {
-                            // LOG(Level::Debug) << "Info buffer " << el.recv_buffer.size() << endl;
-                            // LOG(Level::Debug) << "Should be username " << el.recv_buffer.data + 3 << endl;
+                            LOG(Level::Debug) << "Info buffer " << el.recv_buffer.size() << endl;
+                            LOG(Level::Debug) << "Should be username " << el.recv_buffer.data + 3 << endl;
                             if(PreLayerInstance.fsm(el) == false) {
                                 remove_client(el);
                             }
@@ -104,7 +104,7 @@ void TransferLayer::select_loop(int listener) {
 
                 // and lastly, check for new connections 
                 if (FD_ISSET(listener, &read_fds)) {
-                    LOG(Level::Debug) << "listenr readable\n";
+                    LOG(Level::Debug) << "listener可读\n";
                     accept_new_client(listener);
                 }
                 
@@ -175,10 +175,10 @@ int TransferLayer::accept_new_client(int listener) {
         session_set.emplace_back(newfd, kRecvBufferSize);
 
         char remoteIP[INET6_ADDRSTRLEN];
-        std::cout << "New connection from " << inet_ntop(remoteaddr.ss_family,
+        std::cout << "获得新连接，IP=" << inet_ntop(remoteaddr.ss_family,
                 get_in_addr((struct sockaddr*) &remoteaddr),
                 remoteIP, INET6_ADDRSTRLEN)
-            << " on socket " << newfd << std::endl;
+            << "，socket=" << newfd << std::endl;
         
         session_set.back().ipaddr = inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN);
     }

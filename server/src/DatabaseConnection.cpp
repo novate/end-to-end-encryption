@@ -1,8 +1,8 @@
 #include "../include/DatabaseConnection.hpp"
 
-const char* kDatabaseName = "db1551713";
-const char* kDatabaseUserId= "u1551713";
-const char* kDatabasePassword= "u1551713";
+const char* kDatabaseName = "yzmon_1551713";
+const char* kDatabaseUserId= "dbuser_1551713";
+const char* kDatabasePassword= "yzmond.1551713";
 
 extern Options opt;
 

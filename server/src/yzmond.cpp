@@ -58,7 +58,8 @@ int main()
         cout << "请将该配置文件和本可执行文件置于同一个目录下" << endl;
         return -1;
     }
-    // Options opt = parse_arguments(ifs);
+
+    Options opt = parse_arguments(ifs);
 
     bool log_env[4][4];
     string s_tp = opt.at("tmp_packet");
@@ -77,6 +78,7 @@ int main()
     for (u_int i = 0; i < 4; i++) {
         log_env[3][i] = (s_ds[i] == '1');
     }
+
     bool print_on_screen = (opt.at("屏幕显示") == "1");
     u_int main_log_size = stoi(opt.at("主日志大小")) * 1024;
     u_int sub_log_size = stoi(opt.at("分日志大小")) * 1024;
