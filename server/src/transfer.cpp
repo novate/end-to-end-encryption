@@ -152,9 +152,10 @@ void TransferLayer::select_loop(int listener) {
                 // send first packet
                 PreLayerInstance.fsm(el);
             }
+            if(el.is_scr == true) PreLayerInstance.fsm(el);
         }
 
-        if(el.is_scr == true) PreLayerInstance.fsm(el);
+
     } // end of main loop
 }
 
