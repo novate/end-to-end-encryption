@@ -86,6 +86,15 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::TP_R) << "从未认证的客户端收到版本认证包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::TP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
             recved_pkt.required_version_main = ntohs(recved_pkt.required_version_main);
@@ -93,14 +102,6 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "客户端要求的服务端版本高于本服务器的版本，本机大版本=0x03，客户端要求大版本不小于0x" << hex <<  (u_int)recved_pkt.required_version_main << endl;
                 return false;
             }
-
-            std::vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-
-
             Packet packet2 = client.recv_buffer.dequeue_packet();
             if (packet2.header.direction != 0x91) {
                 LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet2.header.direction << endl;
@@ -112,6 +113,15 @@ bool PresentationLayer::fsm(Client &client) {
             }
 
             AuthResponsePacket &recved_pkt2 = *((AuthResponsePacket*)packet2.payload.first);
+
+            std::vector<uint8_t> recvbuffer2;
+            recvbuffer2.reserve(kHeaderSize + sizeof(recved_pkt2));
+            uint8_t *ptr = recvbuffer2.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer2.insert(recvbuffer2.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::TP_R) << "从未认证的客户端收到基本配置包，长度=" << recvbuffer2.size() << std::endl;
+            LOG(Level::TP_RD) << "收到内容：" << logify_data(recvbuffer2) << std::endl;            
+
             packet2.header.packet_size = ntohs(packet2.header.packet_size);
             recved_pkt2.payload_size = ntohs(recved_pkt2.payload_size);
             recved_pkt2.random_num = ntohl(recved_pkt2.random_num);
@@ -151,8 +161,8 @@ bool PresentationLayer::fsm(Client &client) {
             }
 
             LERR << "客户端通过加密认证" << endl;
-            LOG(Level::DP_S) << "向已认证的客户端发送系统信息请求包，长度=" << temp_vec.size() << std::endl;
-            LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+            LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送系统信息请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
             client.send_buffer.push(temp_vec);
 
             client.state = SessionState::WaitSysInfo;
@@ -177,6 +187,15 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             SysInfoResponsePacket &recved_pkt = *((SysInfoResponsePacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "从已认证的客户端收到系统信息包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
             recved_pkt.user_cpu_time = ntohl(recved_pkt.user_cpu_time);
@@ -208,8 +227,8 @@ bool PresentationLayer::fsm(Client &client) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
 
-            LOG(Level::DP_S) << "向已认证的客户端发送配置信息请求包，长度=" << temp_vec.size() << std::endl;
-            LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+            LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送配置信息请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
             client.send_buffer.push(temp_vec);
 
             client.state = SessionState::WaitConfigInfo;
@@ -229,6 +248,15 @@ bool PresentationLayer::fsm(Client &client) {
             }
 
             ConfInfoResponsePacket &recved_pkt = *((ConfInfoResponsePacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "从已认证的客户端收到配置信息包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
 
@@ -255,8 +283,8 @@ bool PresentationLayer::fsm(Client &client) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
             
-            LOG(Level::DP_S) << "向已认证的客户端发送进程信息请求包，长度=" << temp_vec.size() << std::endl;
-            LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+            LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送进程信息请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
             client.send_buffer.push(temp_vec);
 
             client.state = SessionState::WaitProcInfo;
@@ -276,6 +304,15 @@ bool PresentationLayer::fsm(Client &client) {
             }
 
             ProcInfoResponsePacket &recved_pkt = *((ProcInfoResponsePacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "从已认证的客户端收到进程信息包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
 
@@ -306,8 +343,8 @@ bool PresentationLayer::fsm(Client &client) {
                     }
 
 
-                    LOG(Level::DP_S) << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
-                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+                    LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     client.state = SessionState::WaitTermInfo;
@@ -335,8 +372,8 @@ bool PresentationLayer::fsm(Client &client) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
-                    LOG(Level::DP_S) << "向已认证的客户端发送以太网信息请求包，长度=" << temp_vec.size() << std::endl;
-                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+                    LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送以太网信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     // No Break
@@ -363,8 +400,8 @@ bool PresentationLayer::fsm(Client &client) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
-                    LOG(Level::DP_S) << "向已认证的客户端发送以太网信息请求包，长度=" << temp_vec.size() << std::endl;
-                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+                    LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送以太网信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     client.state = SessionState::WaitEtheInfo;
@@ -390,6 +427,15 @@ bool PresentationLayer::fsm(Client &client) {
                         return false;
                     }
                     EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
+
+                    std::vector<uint8_t> recvbuffer;
+                    recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+                    uint8_t *ptr = recvbuffer.data();
+                    memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+                    recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+                    LOG(Level::DP_R) << "从已认证的客户端收到以太网信息包，长度=" << recvbuffer.size() << std::endl;
+                    LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
                     packet.header.packet_size = ntohs(packet.header.packet_size);
                     recved_pkt.port = ntohs(recved_pkt.port);
                     recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -438,6 +484,15 @@ bool PresentationLayer::fsm(Client &client) {
                         return false;
                     }
                     EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
+
+                    std::vector<uint8_t> recvbuffer;
+                    recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+                    uint8_t *ptr = recvbuffer.data();
+                    memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+                    recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+                    LOG(Level::DP_R) << "从已认证的客户端收到以太网信息包，长度=" << recvbuffer.size() << std::endl;
+                    LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
                     packet.header.packet_size = ntohs(packet.header.packet_size);
                     recved_pkt.port = ntohs(recved_pkt.port);
                     recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -494,8 +549,8 @@ bool PresentationLayer::fsm(Client &client) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
-                    LOG(Level::DP_S) << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
-                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+                    LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     client.state = SessionState::WaitTermInfo;
@@ -516,6 +571,15 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             TerInfoResponsePacket &recved_pkt = *((TerInfoResponsePacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "从已认证的客户端收到终端服务信息包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
             recved_pkt.term_num = ntohs(recved_pkt.term_num);
@@ -546,8 +610,8 @@ bool PresentationLayer::fsm(Client &client) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
-                LOG(Level::DP_S) << "向已认证的客户端发送哑终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
-                LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+                LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送哑终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
+                LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
                 client.send_buffer.push(temp_vec);
             }
             for (int i = 0; i < 254; i++) {
@@ -574,8 +638,8 @@ bool PresentationLayer::fsm(Client &client) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
-                LOG(Level::DP_S) << "向已认证的客户端发送IP终端信息请求包，长度=" << temp_vec.size() << std::endl;
-                LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+                LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送IP终端信息请求包，长度=" << temp_vec.size() << std::endl;
+                LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
                 client.send_buffer.push(temp_vec);
             }
 
@@ -592,10 +656,19 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             if (packet.header.packet_type != 0x0a || packet.header.packet_type != 0x0b) {
-                LERR << "收到的包类型错误，理想=0x09，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
+                LERR << "收到的包类型错误，理想=0x0a/0b，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
             IPTermResponsePacket &recved_pkt = *((IPTermResponsePacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "从已认证的客户端收到哑终端/IP终端配置信息包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.ttyno = ntohs(recved_pkt.ttyno);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -649,8 +722,8 @@ bool PresentationLayer::fsm(Client &client) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
-                LOG(Level::DP_S) << "所有信息都已获得，向已认证的客户端发送结束包，长度=" << temp_vec.size() << std::endl;
-                LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
+                LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "所有信息都已获得，向已认证的客户端发送结束包，长度=" << temp_vec.size() << std::endl;
+                LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
                 client.send_buffer.push(temp_vec);
 
                 client.state = SessionState::End;
@@ -671,16 +744,28 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
 
-            LENV << "服务器收到客户端对结束包的应答报文，关闭TCP连接" << endl;
+            TerInfoResponsePacket &recved_pkt = *((EndPacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "从已认证的客户端收到结束包的应答包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;      
+
+            LENV << "[deptid:" << client.devid << "]" << "服务器收到客户端对结束包的应答包，关闭TCP连接（收到基本/终端=" << client.tty_cnt << "/虚屏=" << client.scr_num << "）" << endl;
 
             if(DatabaseConnection::get_instance()->UpdateTTYConnected(client) == false) return false;
 
             return true;
         }
-        default:
+        default: {
             // error
             LERR << "收到了不该收到的包" << endl;
-            break;
+            return false;
+        }
+
     }
 }
 
