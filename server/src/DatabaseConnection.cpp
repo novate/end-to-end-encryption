@@ -119,13 +119,14 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	command << "'" << to_string(packet_struct.prnnum) << ")";
 	client->prnnum = packet_struct.prnnum;
 
-	cout << command.c_str() << endl;
-
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+
+	if(*mysql_error(this->MysqlHandler))
+	{
+	    // an error occurred
 		LERR << "验证包写入数据库失败" << endl;
 		LDB << "验证包写入数据库失败" << endl;
-		return false;
+		return false;	  
 	}
 	else {
 		LDB << "收到验证包，已验证并写入数据库" << std::endl;
