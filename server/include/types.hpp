@@ -369,32 +369,32 @@ struct Client {
 private:
 
 public:
-    CircularQueue recv_buffer;
-    std::queue< std::vector<uint8_t> > send_buffer;
+	CircularQueue recv_buffer;
+  std::queue< std::vector<uint8_t> > send_buffer;
 	// int send_msg(std::vector<std::pair<uint8_t*, size_t>> buffer, bool is_authorized=true);
 
-    int socket_fd;
-    // PacketType RecvPacketType = PacketType::NullPacket;
-    // PacketType SendPacketType;
+  int socket_fd;
+  // PacketType RecvPacketType = PacketType::NullPacket;
+  // PacketType SendPacketType;
 
 	SessionState state = SessionState::Acceptance;
 
-    std::string ipaddr;
-    // primary key of devstate_base table
-    std::string devid;
-    std::string devno;
-    uint16_t ram;
-    uint8_t ethnum;
-    uint8_t usbnum;
-    uint8_t prnnum;
-    int tty_connected;
-    uint16_t current_tty;
+  std::string ipaddr;
+  // primary key of devstate_base table
+  std::string devid;
+  std::string devno;
+  uint16_t ram;
+  uint8_t ethnum;
+  uint8_t usbnum;
+  uint8_t prnnum;
+  int tty_connected;
+  uint16_t current_tty;
 	int tty_cnt = 0;
 	int scr_num;
-    uint8_t current_scr;
-    uint8_t ether_last=0; // ether包的倒计时器
+  uint8_t current_scr;
+  uint8_t ether_last=0; // ether包的倒计时器
 	uint8_t dumb_term[16];
-    uint8_t ip_term[254];
+  uint8_t ip_term[254];
 };
 
 const u_char kSecret[4096]={

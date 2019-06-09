@@ -150,28 +150,3 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
     return packet;
     // (DemoPacket*)packet.payload.first
 }
-
-/////////////////////////// Client /////////////////////////////
-// int Client::send_msg(vector<pair<uint8_t*, size_t>> buffer, bool is_authorized) {
-//     for (const auto &pr : buffer) {
-//         // pr.first: data; pr.second: size;
-//         int n;
-//         if ((n = send(socket_fd, pr.first, pr.second, 0)) == -1) {
-//             LERR << "服务器发送信息失败" << endl;
-//             return false;
-//         } else if (n == 0) {
-//             LENV << "客户端中断了连接，socket=" << socket_fd << endl;
-//             return false;
-//         } else {
-//             if (is_authorized) {
-//                 LOG(Level::DP_S) << "服务器发送信息成功，长度=" << n << endl;
-//                 LOG(Level::DP_SD) << "发送内容：" << logify_data(pr.first, pr.second) << endl;
-//             }
-//             else {
-//                 LOG(Level::TP_S) << "服务器发送信息成功，长度=" << n << endl;
-//                 LOG(Level::TP_SD) << "发送内容：" << logify_data(pr.first, pr.second) << endl;
-//             }
-//         }
-//     }
-//     return true;
-// }
