@@ -1,7 +1,6 @@
 #ifndef TRANSFER_H
 #define TRANSFER_H
 #include "types.hpp"
-#include "log.hpp"
 #include "./presentation.hpp"
 
 enum class StatusCode : int {
