@@ -60,6 +60,8 @@ bool PresentationLayer::fsm(Client &client) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
 
+            LOG(Level::TP_S) << "向未认证的客户端发送认证请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::TP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
             client.send_buffer.push(temp_vec);
 
             client.state = SessionState::WaitAuth;
@@ -149,6 +151,9 @@ bool PresentationLayer::fsm(Client &client) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
 
+            LERR << "客户端通过加密认证" << endl;
+            LOG(Level::DP_S) << "向已认证的客户端发送系统信息请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
             client.send_buffer.push(temp_vec);
 
             client.state = SessionState::WaitSysInfo;
@@ -204,6 +209,8 @@ bool PresentationLayer::fsm(Client &client) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
 
+            LOG(Level::DP_S) << "向已认证的客户端发送配置信息请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
             client.send_buffer.push(temp_vec);
 
             client.state = SessionState::WaitConfigInfo;
@@ -248,7 +255,9 @@ bool PresentationLayer::fsm(Client &client) {
             for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
-
+            
+            LOG(Level::DP_S) << "向已认证的客户端发送进程信息请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
             client.send_buffer.push(temp_vec);
 
             client.state = SessionState::WaitProcInfo;
@@ -297,6 +306,9 @@ bool PresentationLayer::fsm(Client &client) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
+
+                    LOG(Level::DP_S) << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     client.state = SessionState::WaitTermInfo;
@@ -324,6 +336,8 @@ bool PresentationLayer::fsm(Client &client) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
+                    LOG(Level::DP_S) << "向已认证的客户端发送以太网信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     // No Break
@@ -350,6 +364,8 @@ bool PresentationLayer::fsm(Client &client) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
+                    LOG(Level::DP_S) << "向已认证的客户端发送以太网信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     client.state = SessionState::WaitEtheInfo;
@@ -479,6 +495,8 @@ bool PresentationLayer::fsm(Client &client) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
+                    LOG(Level::DP_S) << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
+                    LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
                     client.send_buffer.push(temp_vec);
 
                     client.state = SessionState::WaitTermInfo;
@@ -529,6 +547,8 @@ bool PresentationLayer::fsm(Client &client) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
+                LOG(Level::DP_S) << "向已认证的客户端发送哑终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
+                LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
                 client.send_buffer.push(temp_vec);
             }
             for (int i = 0; i < 254; i++) {
@@ -555,6 +575,8 @@ bool PresentationLayer::fsm(Client &client) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
+                LOG(Level::DP_S) << "向已认证的客户端发送IP终端信息请求包，长度=" << temp_vec.size() << std::endl;
+                LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
                 client.send_buffer.push(temp_vec);
             }
 
@@ -641,6 +663,8 @@ bool PresentationLayer::fsm(Client &client) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
+                LOG(Level::DP_S) << "所有信息都已获得，向已认证的客户端发送结束包，长度=" << temp_vec.size() << std::endl;
+                LOG(Level::DP_SD) << "发送内容：" << logify_data(temp_vec) << std::endl;
                 client.send_buffer.push(temp_vec);
 
                 client.state = SessionState::End;
@@ -661,7 +685,7 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
 
-            LENV << "服务器收到客户端的应答报文，关闭TCP连接" << endl;
+            LENV << "服务器收到客户端对结束包的应答报文，关闭TCP连接" << endl;
 
             if(DatabaseConnection::get_instance()->UpdateTTYConnected(client) == false) return false;
 
