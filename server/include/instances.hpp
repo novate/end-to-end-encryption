@@ -9,4 +9,6 @@
 extern PresentationLayer PreLayerInstance;
 extern TransferLayer TransLayerInstance;
 
+extern Options opt;
+
 #endif // INSTANCE_HPP

@@ -16,7 +16,8 @@ PresentationLayer::PresentationLayer()
 }
 
 bool PresentationLayer::fsm(Client &client) {
-    cout << "SessionState: " << int(client.state) << endl;
+    cout << "SessionState: " << int(client.state) << endl
+        << "opt.size(): " << opt.size() << endl;
     // send
     switch (client.state) {
         // first message
@@ -24,7 +25,6 @@ bool PresentationLayer::fsm(Client &client) {
             // first message
             // construct message
             // header
-            cout << "fsm good 1\n";
             PacketHeader header;
             // packet_type: hton
             header.direction = 0x11;
@@ -44,6 +44,7 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.is_empty_tty = 0x1;
 
             // ------------------------------------------------Generateing Encryption String -------------------------------------------------
+            cout << "fsm good 1\n";
             u_int random_num=0, svr_time=0;
             uint8_t auth_str[33] = "yzmond:id*str&to!tongji@by#Auth^";
             encrypt_auth(random_num, svr_time, auth_str, 32);

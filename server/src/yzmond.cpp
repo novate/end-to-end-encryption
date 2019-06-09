@@ -59,7 +59,7 @@ int main()
         return -1;
     }
 
-    Options opt = parse_arguments(ifs);
+    opt = parse_arguments(ifs);
 
     bool log_env[4][4];
     string s_tp = opt.at("tmp_packet");
