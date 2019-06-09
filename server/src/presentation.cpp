@@ -206,7 +206,7 @@ bool PresentationLayer::fsm(Client &client) {
             memcpy(ptr, &packet.header, kHeaderSize);
             memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.size = kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size();
+            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
 
             LOG(Level::DP_R) << "从已认证的客户端收到系统信息包，长度=" << recvbuffer.size() << std::endl;
             LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
@@ -271,7 +271,7 @@ bool PresentationLayer::fsm(Client &client) {
             memcpy(ptr, &packet.header, kHeaderSize);
             memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.size = kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size();
+            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
 
             LOG(Level::DP_R) << "从已认证的客户端收到配置信息包，长度=" << recvbuffer.size() << std::endl;
             LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
@@ -331,7 +331,7 @@ bool PresentationLayer::fsm(Client &client) {
             memcpy(ptr, &packet.header, kHeaderSize);
             memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.size = kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size();
+            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
             
             LOG(Level::DP_R) << "从已认证的客户端收到进程信息包，长度=" << recvbuffer.size() << std::endl;
             LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
@@ -456,7 +456,7 @@ bool PresentationLayer::fsm(Client &client) {
             memcpy(ptr, &packet.header, kHeaderSize);
             memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.size = kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size();
+            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
 
             LOG(Level::DP_R) << "从已认证的客户端收到以太网信息包，长度=" << recvbuffer.size() << std::endl;
             LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
@@ -551,7 +551,7 @@ bool PresentationLayer::fsm(Client &client) {
             memcpy(ptr, &packet.header, kHeaderSize);
             memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.size = kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size();
+            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
 
             LOG(Level::DP_R) << "从已认证的客户端收到终端服务信息包，长度=" << recvbuffer.size() << std::endl;
             LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
@@ -697,7 +697,7 @@ bool PresentationLayer::fsm(Client &client) {
             recvbuffer.reserve(kHeaderSize + sizeof(IPTermResponsePacket));
             memcpy(recvbuffer.data(), &client.current_ipterm.header, kHeaderSize);
             memcpy(recvbuffer.data() + kHeaderSize, &client.current_ipterm.payload.first, sizeof(IPTermResponsePacket));
-            recvbuffer.size = kHeaderSize + sizeof(IPTermResponsePacket);
+            recvbuffer.resize(kHeaderSize + sizeof(IPTermResponsePacket));
 
             for(int i = 0; i < client.scr_num; i++) {
                 // recv
@@ -718,7 +718,7 @@ bool PresentationLayer::fsm(Client &client) {
                 if(DatabaseConnection::get_instance()->OnRecvScreenInfoPacket(packet, client) == false) return false;
 
                 memcpy(&recvbuffer[recvbuffer.size()], &packet.payload.first, sizeof(ScreenInfoPacket));
-                recvbuffer.size = recvbuffer.size() + sizeof(ScreenInfoPacket);
+                recvbuffer.resize(recvbuffer.size() + sizeof(ScreenInfoPacket));
             }
 
             // use here
@@ -781,7 +781,7 @@ bool PresentationLayer::fsm(Client &client) {
             memcpy(ptr, &packet.header, kHeaderSize);
             memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.size = kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size();
+            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
             
             LOG(Level::DP_R) << "从已认证的客户端收到结束包的应答包，长度=" << recvbuffer.size() << std::endl;
             LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;      

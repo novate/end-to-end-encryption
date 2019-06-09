@@ -116,7 +116,7 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	command << "'" << to_string(packet_struct.usbnum) << "', ";
 	client->usbnum = packet_struct.usbnum;
 	// prnnum
-	command << "'" << to_string(packet_struct.prnnum) << "', 0, 0, 0, 0)";
+	command << "'" << to_string(packet_struct.prnnum) << "', 0, 0, 0, 0);\n";
 	client->prnnum = packet_struct.prnnum;
 
 	cout << endl << command.str() << endl << endl;
