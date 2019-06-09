@@ -92,7 +92,7 @@ enum class PacketType: uint8_t {
 };
 
 struct AuthRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
     uint16_t version_main;
     uint8_t version_sub1;
@@ -100,14 +100,14 @@ struct AuthRequestPacket {
     uint16_t time_gap_fail;
     uint16_t time_gap_succeed;
     uint8_t is_empty_tty;
-    uint8_t pad_2[3];
-    uint8_t auth_string[32];
+    uint8_t pad_2[3] {};
+    uint8_t auth_string[32] {};
     uint32_t random_num;
     uint32_t svr_time;
 };
 
 struct VersionRequirePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
     uint16_t required_version_main;
     uint8_t required_version_sub1;
@@ -115,36 +115,36 @@ struct VersionRequirePacket {
 };
 
 struct AuthResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
     uint16_t cpu_frequence;
     uint16_t ram;
     uint16_t flash;
     uint16_t internal_serial;
-    uint8_t group_serial[16];
-    uint8_t device_type[16];
-    uint8_t software_verison[16];
+    uint8_t group_serial[16] {};
+    uint8_t device_type[16] {};
+    uint8_t software_verison[16] {};
     uint8_t ethnum;
     uint8_t syncnum;
     uint8_t asyncnum;
     uint8_t switchnum;
     uint8_t usbnum;
     uint8_t prnnum;
-    uint8_t pad_2[2];
+    uint8_t pad_2[2] {};
     uint32_t devid;
     uint8_t devno;
-    uint8_t pad_3[3];
-    uint8_t auth_string[32];
+    uint8_t pad_3[3] {};
+    uint8_t auth_string[32] {};
     uint32_t random_num;
 };
 
 struct SysInfoRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct SysInfoResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
     uint32_t user_cpu_time;
     uint32_t nice_cpu_time;
@@ -154,22 +154,22 @@ struct SysInfoResponsePacket {
 };
 
 struct ConfInfoRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct ConfInfoResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct ProcInfoRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct ProcInfoResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
@@ -185,7 +185,7 @@ struct EtherInfoResponsePacket {
     uint8_t if_set;
     uint8_t state;  // UP or DOWN
     uint8_t pad_1;
-    uint8_t mac[6];
+    uint8_t mac[6] {};
     uint16_t options;
     uint32_t addr;
     uint32_t mask;
@@ -218,61 +218,61 @@ struct EtherInfoResponsePacket {
 };
 
 struct USBStateRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct USBStateResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
     uint8_t usb_is_inserted;
-		uint8_t pad_2[3];
+		uint8_t pad_2[3] {};
 };
 
 struct USBInfoRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct USBInfoResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct PrintDevRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct PrintDevResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
     uint8_t print_is_usable;
 		uint8_t pad_2;
 		uint16_t cnt_of_server;
-		uint8_t printer_name[32];
+		uint8_t printer_name[32] {};
 };
 
 struct PrintQueueRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct PrintQueueResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct TerInfoRequestPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
 struct TerInfoResponsePacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
-    uint8_t dumb_term[16];
-    uint8_t ip_term[254];
+    uint8_t dumb_term[16] {};
+    uint8_t ip_term[254] {};
     uint16_t term_num;
 };
 
@@ -289,8 +289,8 @@ struct IPTermResponsePacket {
     uint8_t active_screen;
     uint8_t screen_num;
     uint32_t ttyip;
-    uint8_t type[12];
-    uint8_t state[8];
+    uint8_t type[12] {};
+    uint8_t state[8] {};
 };
 
 struct ScreenInfoPacket {
@@ -298,10 +298,10 @@ struct ScreenInfoPacket {
     uint8_t pad_1;
     uint16_t server_port;
     uint32_t server_ip;
-    uint8_t proto[12];
-    uint8_t state[8];
-    uint8_t promp[24];
-    uint8_t tty_type[12];
+    uint8_t proto[12] {};
+    uint8_t state[8] {};
+    uint8_t promp[24] {};
+    uint8_t tty_type[12] {};
     uint32_t time;
     uint32_t send_term_byte;
     uint32_t recv_term_byte;
@@ -313,7 +313,7 @@ struct ScreenInfoPacket {
 };
 
 struct EndPacket {
-    uint8_t pad_1[2];
+    uint8_t pad_1[2] {};
     uint16_t payload_size;
 };
 
@@ -393,8 +393,8 @@ public:
 	int scr_num;
   uint8_t current_scr;
   uint8_t ether_last=0; // ether包的倒计时器
-	uint8_t dumb_term[16];
-    uint8_t ip_term[254];
+	uint8_t dumb_term[16] {};
+    uint8_t ip_term[254] {};
 	Packet current_ipterm;
 };
 

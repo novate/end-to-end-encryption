@@ -107,7 +107,7 @@ void TransferLayer::select_loop(int listener) {
                     
                     // cout << "send buffer transport " << el.send_buffer.size() << endl;
                     if (FD_ISSET(el.socket_fd, &write_fds)) {
-                        if (PreLayerInstance.fsm(el) == false || try_send(el) != StatusCode::OK) {
+                        if (try_send(el) != StatusCode::OK) {
                             // remove client
                             cout << "remove_client(el) 3\n";
                             remove_client(el);
@@ -123,14 +123,14 @@ void TransferLayer::select_loop(int listener) {
                 
                 break;
         } // end of switch
-    } // end of main loop
 
-    for(auto &el: session_set) {
-        if(el.state == SessionState::Acceptance) {
-            // send first packet
-            PreLayerInstance.fsm(el);
+        for(auto &el: session_set) {
+            if(el.state == SessionState::Acceptance) {
+                // send first packet
+                PreLayerInstance.fsm(el);
+            }
         }
-    }
+    } // end of main loop
 }
 
 int TransferLayer::reset_rw_fd_sets(fd_set &read_fds, fd_set &write_fds) {

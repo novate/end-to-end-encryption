@@ -81,6 +81,7 @@ bool PresentationLayer::fsm(Client &client) {
         case SessionState::WaitAuth : {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
+            cout << "debug 1" << endl;
             if (packet.header.direction != 0x91) {
                 LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
                 return false;
@@ -89,13 +90,14 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "收到的包类型错误，理想=0x00，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
+            cout << "debug 2" << endl;
             if(packet.header.packet_type == 0x00) {
                 VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
-
                 std::vector<uint8_t> recvbuffer;
                 recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
                 uint8_t *ptr = recvbuffer.data();
                 memcpy(ptr, &packet.header, kHeaderSize);
+                cout << "debug 3" << endl;
                 memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
                 recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
                 LOG(Level::TP_R) << "从未认证的客户端收到版本认证包，长度=" << recvbuffer.size() << std::endl;
@@ -113,14 +115,24 @@ bool PresentationLayer::fsm(Client &client) {
             // AuthREsponsePacket
             AuthResponsePacket &recved_pkt2 = *((AuthResponsePacket*)packet.payload.first);
 
+
             std::vector<uint8_t> recvbuffer2;
             recvbuffer2.reserve(kHeaderSize + sizeof(recved_pkt2));
             uint8_t *ptr2 = recvbuffer2.data();
-            memcpy(ptr2, &packet.header, kHeaderSize);
-            memcpy(ptr2 + kHeaderSize, &packet.payload.first, sizeof(recved_pkt2));
+            
+            cout << recvbuffer2.data() << endl;
+
+            memcpy(ptr2, (uint8_t*)&packet.header, kHeaderSize);
+            memcpy(ptr2 + kHeaderSize, (uint8_t*)&recved_pkt2, sizeof(recved_pkt2));
+
+            // cout << logify_data((uint8_t*)recvbuffer2.data(), 4 + sizeof(recved_pkt2)) << endl;
+
             recvbuffer2.insert(recvbuffer2.end(), packet.payload.second.begin(), packet.payload.second.end());
+            
+            // cout << logify_data((uint8_t*)recvbuffer2.data(), 4 + sizeof(recved_pkt2)) << endl;
+            // cout << ntohs(recved_pkt2.payload_size) << endl;
             LOG(Level::TP_R) << "从未认证的客户端收到基本配置包，长度=" << recvbuffer2.size() << std::endl;
-            LOG(Level::TP_RD) << "收到内容：" << logify_data(recvbuffer2) << std::endl;            
+            LOG(Level::TP_RD) << "收到内容：" << logify_data(()recvbuffer2.data(), kHeaderSize+) << std::endl;            
 
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt2.payload_size = ntohs(recved_pkt2.payload_size);

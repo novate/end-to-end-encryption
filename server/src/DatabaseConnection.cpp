@@ -119,6 +119,8 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	command << "'" << to_string(packet_struct.prnnum) << ")";
 	client->prnnum = packet_struct.prnnum;
 
+	cout << command.c_str() << endl;
+
 	result = MysqlExecCommand(command.str());
 	if(result == NULL) {
 		LERR << "验证包写入数据库失败" << endl;
