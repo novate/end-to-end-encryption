@@ -41,7 +41,7 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.time_gap_succeed = htons((unsigned short)stoi(opt.at("设备采样间隔")));
             pkt.is_empty_tty = 0x1;
 
-            // ------------------------------------------------Generateing Encryption String -----------------
+            // ------------------------------------------------Generateing Encryption String -------------------------------------------------
             u_int random_num=0, svr_time=0;
             uint8_t auth_str[33] = "yzmond:id*str&to!tongji@by#Auth^";
             encrypt_auth(random_num, svr_time, auth_str, 32);
@@ -81,7 +81,7 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
                 return false;
             }
-            if (packet.header.packet_type != 0x00 || packet.header.packet_type != 0x01) {
+            if (!(packet.header.packet_type == 0x00 || packet.header.packet_type == 0x01)) {
                 LERR << "收到的包类型错误，理想=0x00，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
@@ -104,17 +104,6 @@ bool PresentationLayer::fsm(Client &client) {
                     LERR << "客户端要求的服务端版本高于本服务器的版本，本机大版本=0x03，客户端要求大版本不小于0x" << hex <<  (u_int)recved_pkt.required_version_main << endl;
                     return false;
                 }
-                Packet packet2 = client.recv_buffer.dequeue_packet();
-                if (packet2.header.direction != 0x91) {
-                    LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet2.header.direction << endl;
-                    return false;
-                }
-                if (packet2.header.packet_type != 0x01) {
-                    LERR << "收到的包类型错误，理想=0x01，实际=0x" << hex <<  (u_int)packet2.header.packet_type << endl;
-                    return false;
-                }
-
-                return false;
             } //end of VersionRequirePacket
 
             // AuthREsponsePacket
@@ -243,6 +232,7 @@ bool PresentationLayer::fsm(Client &client) {
 
             return true;
         }
+
         case SessionState::WaitConfigInfo: {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -300,6 +290,7 @@ bool PresentationLayer::fsm(Client &client) {
 
             return true;
         }
+
         case SessionState::WaitProcInfo: {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
@@ -360,6 +351,7 @@ bool PresentationLayer::fsm(Client &client) {
                     client.state = SessionState::WaitTermInfo;
                     break;
                 }
+
                 case 0x02:{
                     // construct message
                     // header
@@ -613,7 +605,7 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
                 return false;
             }
-            if (packet.header.packet_type != 0x0a || packet.header.packet_type != 0x0b) {
+            if (!(packet.header.packet_type == 0x0a || packet.header.packet_type == 0x0b)) {
                 LERR << "收到的包类型错误，理想=0x0a/0b，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
@@ -634,12 +626,42 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt.ttyip = ntohs(recved_pkt.ttyip);
             if(DatabaseConnection::get_instance()->OnRecvIPTermResponse(packet, client) == false) return false;
             client.tty_cnt++;
+
             client.scr_num = (int)recved_pkt.screen_num;
             if(recved_pkt.screen_num != 0x00) {
                 memcpy(&client.current_ipterm, &packet.header, kHeaderSize);
                 memcpy(&client.current_ipterm.payload.first, &packet.payload.first, sizeof(recved_pkt));
                 client.state = SessionState::WaitScrInfo;
             }
+            else if(client.tty_cnt == client.tty_connected) {
+                // construct message
+                // header
+                PacketHeader header;
+                // packet_type: hton
+                header.direction = 0x11;
+                header.packet_type = 0xff;
+                header.packet_size = htons(8);
+
+                // packet struct
+                EndPacket pkt;
+                pkt.payload_size = 0;
+
+                vector<uint8_t> temp_vec;
+                for(int i = 0; i < kHeaderSize; i++) {
+                    temp_vec.push_back(((uint8_t*)&header)[i]);
+                }
+                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                    temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                }
+
+                LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "所有信息都已获得，向已认证的客户端发送结束包，长度=" << temp_vec.size() << std::endl;
+                LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
+                client.send_buffer.push(temp_vec);
+
+                client.state = SessionState::End;
+            }
+            else 
+                ;   // client.state is still WaitIPTermInfo
 
             return true;
         }
