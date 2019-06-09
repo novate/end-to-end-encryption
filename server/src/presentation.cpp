@@ -76,12 +76,13 @@ bool PresentationLayer::fsm(Client &client) {
             //     make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             // };
             // client.send_msg(buffer);
+
             return true;
             }
         case SessionState::WaitAuth : {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
-            cout << "debug 1" << endl;
+            // cout << "debug 1" << endl;
             if (packet.header.direction != 0x91) {
                 LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
                 return false;
@@ -90,14 +91,13 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "收到的包类型错误，理想=0x00，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
-            cout << "debug 2" << endl;
             if(packet.header.packet_type == 0x00) {
                 VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
                 std::vector<uint8_t> recvbuffer;
                 recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
                 uint8_t *ptr = recvbuffer.data();
                 memcpy(ptr, &packet.header, kHeaderSize);
-                cout << "debug 3" << endl;
+                // cout << "debug 3" << endl;
                 memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
                 recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
                 LOG(Level::TP_R) << "从未认证的客户端收到版本认证包，长度=" << recvbuffer.size() << std::endl;
@@ -119,18 +119,10 @@ bool PresentationLayer::fsm(Client &client) {
             std::vector<uint8_t> recvbuffer2;
             recvbuffer2.reserve(kHeaderSize + sizeof(recved_pkt2));
             uint8_t *ptr2 = recvbuffer2.data();
-            
-            cout << recvbuffer2.data() << endl;
 
             memcpy(ptr2, (uint8_t*)&packet.header, kHeaderSize);
             memcpy(ptr2 + kHeaderSize, (uint8_t*)&recved_pkt2, sizeof(recved_pkt2));
-
-            // cout << logify_data((uint8_t*)recvbuffer2.data(), 4 + sizeof(recved_pkt2)) << endl;
-
             recvbuffer2.insert(recvbuffer2.end(), packet.payload.second.begin(), packet.payload.second.end());
-            
-            // cout << logify_data((uint8_t*)recvbuffer2.data(), 4 + sizeof(recved_pkt2)) << endl;
-            // cout << ntohs(recved_pkt2.payload_size) << endl;
             LOG(Level::TP_R) << "从未认证的客户端收到基本配置包，长度=" << kHeaderSize+sizeof(recved_pkt2) << std::endl;
             LOG(Level::TP_RD) << "收到内容：" << logify_data(recvbuffer2.data(), kHeaderSize+sizeof(recved_pkt2)) << std::endl;            
 
@@ -168,7 +160,7 @@ bool PresentationLayer::fsm(Client &client) {
             for(int i = 0; i < kHeaderSize; i++) {
                 temp_vec.push_back(((uint8_t*)&header)[i]);
             }
-            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+            for(int i = 0; i < sizeof(SysInfoRequestPacket); i++) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
 
@@ -203,13 +195,12 @@ bool PresentationLayer::fsm(Client &client) {
             std::vector<uint8_t> recvbuffer;
             recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
             uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet.header, kHeaderSize);
-            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
 
-            LOG(Level::DP_R) << "从已认证的客户端收到系统信息包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+            memcpy(ptr, (uint8_t*)&packet.header, kHeaderSize);
+            memcpy(ptr + kHeaderSize, (uint8_t*)&recved_pkt, sizeof(recved_pkt));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "[deptid:" << client.devid << "]" << "从已认证的客户端收到系统信息包，长度=" << kHeaderSize+sizeof(recved_pkt) << std::endl;
+            LOG(Level::DP_RD) << "[deptid:" << client.devid << "]" << "收到内容：" << logify_data(recvbuffer.data(), kHeaderSize+sizeof(recved_pkt)) << std::endl;           
 
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -238,7 +229,7 @@ bool PresentationLayer::fsm(Client &client) {
             for(int i = 0; i < kHeaderSize; i++) {
                 temp_vec.push_back(((uint8_t*)&header)[i]);
             }
-            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+            for(int i = 0; i < sizeof(ConfInfoRequestPacket); i++) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
 
@@ -266,15 +257,18 @@ bool PresentationLayer::fsm(Client &client) {
             ConfInfoResponsePacket &recved_pkt = *((ConfInfoResponsePacket*)packet.payload.first);
 
             std::vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet.header, kHeaderSize);
-            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
-
-            LOG(Level::DP_R) << "从已认证的客户端收到配置信息包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+            for(int i = 0; i < kHeaderSize; i++) {
+                recvbuffer.push_back(((uint8_t*)&packet.header)[i]);
+            }
+            for(int i = 0; i < sizeof(recved_pkt); i++) {
+                recvbuffer.push_back(((uint8_t*)&recved_pkt)[i]);
+            }
+            for(int i = 0; i < packet.payload.second.size(); i++) {
+                recvbuffer.push_back(packet.payload.second[i]);
+            }
+            
+            LOG(Level::DP_R) << "[deptid:" << client.devid << "]" << "从已认证的客户端收到配置信息包，长度=" << kHeaderSize+sizeof(recved_pkt) + packet.payload.second.size() << std::endl;
+            LOG(Level::DP_RD) << "[deptid:" << client.devid << "]" << "收到内容：" << logify_data(recvbuffer.data(), kHeaderSize+sizeof(recved_pkt)+packet.payload.second.size()) << std::endl;          
 
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -298,7 +292,7 @@ bool PresentationLayer::fsm(Client &client) {
             for(int i = 0; i < kHeaderSize; i++) {
                 temp_vec.push_back(((uint8_t*)&header)[i]);
             }
-            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+            for(int i = 0; i < sizeof(ProcInfoRequestPacket); i++) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
             
@@ -326,15 +320,18 @@ bool PresentationLayer::fsm(Client &client) {
             ProcInfoResponsePacket &recved_pkt = *((ProcInfoResponsePacket*)packet.payload.first);
 
             std::vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet.header, kHeaderSize);
-            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
+            for(int i = 0; i < kHeaderSize; i++) {
+                recvbuffer.push_back(((uint8_t*)&packet.header)[i]);
+            }
+            for(int i = 0; i < sizeof(recved_pkt); i++) {
+                recvbuffer.push_back(((uint8_t*)&recved_pkt)[i]);
+            }
+            for(int i = 0; i < packet.payload.second.size(); i++) {
+                recvbuffer.push_back(packet.payload.second[i]);
+            }
             
-            LOG(Level::DP_R) << "从已认证的客户端收到进程信息包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+            LOG(Level::DP_R) << "[deptid:" << client.devid << "]" << "从已认证的客户端收到进程信息包，长度=" << kHeaderSize+sizeof(recved_pkt) + packet.payload.second.size() << std::endl;
+            LOG(Level::DP_RD) << "[deptid:" << client.devid << "]" << "收到内容：" << logify_data(recvbuffer.data(), kHeaderSize+sizeof(recved_pkt)+packet.payload.second.size()) << std::endl;            
 
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -361,10 +358,9 @@ bool PresentationLayer::fsm(Client &client) {
                     for(int i = 0; i < kHeaderSize; i++) {
                         temp_vec.push_back(((uint8_t*)&header)[i]);
                     }
-                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                    for(int i = 0; i < sizeof(TerInfoRequestPacket); i++) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
-
 
                     LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
                     LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
@@ -392,7 +388,7 @@ bool PresentationLayer::fsm(Client &client) {
                     for(int i = 0; i < kHeaderSize; i++) {
                         temp_vec.push_back(((uint8_t*)&header)[i]);
                     }
-                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                    for(int i = 0; i < sizeof(EtherInfoRequestPacket); i++) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
                     
@@ -420,7 +416,7 @@ bool PresentationLayer::fsm(Client &client) {
                     for(int i = 0; i < kHeaderSize; i++) {
                         temp_vec.push_back(((uint8_t*)&header)[i]);
                     }
-                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                    for(int i = 0; i < sizeof(EtherInfoRequestPacket); i++) {
                         temp_vec.push_back(((uint8_t*)&pkt)[i]);
                     }
 
@@ -451,15 +447,18 @@ bool PresentationLayer::fsm(Client &client) {
             EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
 
             std::vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet.header, kHeaderSize);
-            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
-
-            LOG(Level::DP_R) << "从已认证的客户端收到以太网信息包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+            for(int i = 0; i < kHeaderSize; i++) {
+                recvbuffer.push_back(((uint8_t*)&packet.header)[i]);
+            }
+            for(int i = 0; i < sizeof(recved_pkt); i++) {
+                recvbuffer.push_back(((uint8_t*)&recved_pkt)[i]);
+            }
+            for(int i = 0; i < packet.payload.second.size(); i++) {
+                recvbuffer.push_back(packet.payload.second[i]);
+            }
+            
+            LOG(Level::DP_R) << "[deptid:" << client.devid << "]" << "从已认证的客户端收到以太网信息包，长度=" << kHeaderSize+sizeof(recved_pkt) + packet.payload.second.size() << std::endl;
+            LOG(Level::DP_RD) << "[deptid:" << client.devid << "]" << "收到内容：" << logify_data(recvbuffer.data(), kHeaderSize+sizeof(recved_pkt)+packet.payload.second.size()) << std::endl;
 
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.port = ntohs(recved_pkt.port);
@@ -518,9 +517,10 @@ bool PresentationLayer::fsm(Client &client) {
             for(int i = 0; i < kHeaderSize; i++) {
                 temp_vec.push_back(((uint8_t*)&header)[i]);
             }
-            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+            for(int i = 0; i < sizeof(TerInfoRequestPacket); i++) {
                 temp_vec.push_back(((uint8_t*)&pkt)[i]);
             }
+            
 
             LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
             LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
@@ -528,7 +528,7 @@ bool PresentationLayer::fsm(Client &client) {
 
             client.state = SessionState::WaitTermInfo;
 
-            break;
+            return true;
                 // }
             // }
         }
@@ -546,15 +546,18 @@ bool PresentationLayer::fsm(Client &client) {
             TerInfoResponsePacket &recved_pkt = *((TerInfoResponsePacket*)packet.payload.first);
 
             std::vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet.header, kHeaderSize);
-            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
-
-            LOG(Level::DP_R) << "从已认证的客户端收到终端服务信息包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+            for(int i = 0; i < kHeaderSize; i++) {
+                recvbuffer.push_back(((uint8_t*)&packet.header)[i]);
+            }
+            for(int i = 0; i < sizeof(recved_pkt); i++) {
+                recvbuffer.push_back(((uint8_t*)&recved_pkt)[i]);
+            }
+            for(int i = 0; i < packet.payload.second.size(); i++) {
+                recvbuffer.push_back(packet.payload.second[i]);
+            }
+            
+            LOG(Level::DP_R) << "[deptid:" << client.devid << "]" << "从已认证的客户端收到终端服务信息包，长度=" << kHeaderSize+sizeof(recved_pkt) + packet.payload.second.size() << std::endl;
+            LOG(Level::DP_RD) << "[deptid:" << client.devid << "]" << "收到内容：" << logify_data(recvbuffer.data(), kHeaderSize+sizeof(recved_pkt)+packet.payload.second.size()) << std::endl;           
 
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -562,12 +565,12 @@ bool PresentationLayer::fsm(Client &client) {
             if(DatabaseConnection::get_instance()->OnRecvTermResponse(packet, client) == false) return false;
 
             // ------------------------------------------- Send IP/Dumb Packet ----------------------------------
+            // header
+            PacketHeader header;
             for (int i = 0; i < 16; i++) {
                 client.dumb_term[i] = recved_pkt.dumb_term[i];
-                if(client.dumb_term[i] == 0x00) continue;
+                if((int)client.dumb_term[i] == 0) continue;
                 // construct message
-                // header
-                PacketHeader header;
                 // packet_type: hton
                 header.direction = 0x11;
                 header.packet_type = 0x0a;
@@ -575,14 +578,14 @@ bool PresentationLayer::fsm(Client &client) {
 
                 // packet struct
                 IPTermRequestPacket pkt;
-                pkt.ttyno = i + 1;
+                pkt.ttyno = htons(i + 1);
                 pkt.payload_size = 0;
 
                 vector<uint8_t> temp_vec;
                 for(int i = 0; i < kHeaderSize; i++) {
                     temp_vec.push_back(((uint8_t*)&header)[i]);
                 }
-                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                for(int i = 0; i < sizeof(IPTermRequestPacket); i++) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
@@ -592,10 +595,8 @@ bool PresentationLayer::fsm(Client &client) {
             }
             for (int i = 0; i < 254; i++) {
                 client.ip_term[i] = recved_pkt.ip_term[i];
-                if(client.ip_term[i] == 0x00) continue;
+                if((int)client.ip_term[i] == 0) continue;
                 // construct message
-                // header
-                PacketHeader header;
                 // packet_type: hton
                 header.direction = 0x11;
                 header.packet_type = 0x0b;
@@ -603,14 +604,14 @@ bool PresentationLayer::fsm(Client &client) {
 
                 // packet struct
                 IPTermRequestPacket pkt;
-                pkt.ttyno = i + 1;
+                pkt.ttyno = htons(i + 1);
                 pkt.payload_size = 0;
 
                 vector<uint8_t> temp_vec;
                 for(int i = 0; i < kHeaderSize; i++) {
                     temp_vec.push_back(((uint8_t*)&header)[i]);
                 }
-                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                for(int i = 0; i < sizeof(IPTermRequestPacket); i++) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
@@ -635,17 +636,7 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "收到的包类型错误，理想=0x0a/0b，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
-            IPTermResponsePacket &recved_pkt = *((IPTermResponsePacket*)packet.payload.first);
-
-            // std::vector<uint8_t> recvbuffer;
-            // recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            // uint8_t *ptr = recvbuffer.data();
-            // memcpy(ptr, &packet.header, kHeaderSize);
-            // memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            // recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            // LOG(Level::DP_R) << "从已认证的客户端收到哑终端/IP终端配置信息包，长度=" << recvbuffer.size() << std::endl;
-            // LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
-
+            IPTermResponsePacket &recved_pkt = *((IPTermResponsePacket*)packet.payload.first);         
             packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.ttyno = ntohs(recved_pkt.ttyno);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
@@ -654,10 +645,16 @@ bool PresentationLayer::fsm(Client &client) {
             client.tty_cnt++;
 
             client.scr_num = (int)recved_pkt.screen_num;
+            cout << "client.scr_num: " << client.scr_num << endl;
+            cout << "client.tty_connected:" << client.tty_connected << endl;
             if(recved_pkt.screen_num != 0x00) {
-                memcpy(&client.current_ipterm, &packet.header, kHeaderSize);
-                memcpy(&client.current_ipterm.payload.first, &packet.payload.first, sizeof(recved_pkt));
+                client.current_ipterm.header = packet.header;
+                // memcpy(&client.current_ipterm, &packet.header, kHeaderSize);
+                client.current_ipterm.payload.first = packet.payload.first;
+                // memcpy(&client.current_ipterm.payload.first, &packet.payload.first, sizeof(recved_pkt));
                 client.state = SessionState::WaitScrInfo;
+                client.is_scr = true;
+                client.scr_packet_size = client.scr_num * sizeof(ScreenInfoPacket);
             }
             else if(client.tty_cnt == client.tty_connected) {
                 // construct message
@@ -676,7 +673,7 @@ bool PresentationLayer::fsm(Client &client) {
                 for(int i = 0; i < kHeaderSize; i++) {
                     temp_vec.push_back(((uint8_t*)&header)[i]);
                 }
-                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                for(int i = 0; i < sizeof(EndPacket); i++) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
@@ -693,16 +690,20 @@ bool PresentationLayer::fsm(Client &client) {
         }
 
         case SessionState::WaitScrInfo: {
+
             vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(IPTermResponsePacket));
-            memcpy(recvbuffer.data(), &client.current_ipterm.header, kHeaderSize);
-            memcpy(recvbuffer.data() + kHeaderSize, &client.current_ipterm.payload.first, sizeof(IPTermResponsePacket));
-            recvbuffer.resize(kHeaderSize + sizeof(IPTermResponsePacket));
+            for(int i = 0; i < kHeaderSize ; i++) {
+                recvbuffer.push_back(((uint8_t*)&client.current_ipterm.header)[i]);
+            }
+            for(int i = 0; i < sizeof(IPTermResponsePacket); i++) {
+                recvbuffer.push_back(((uint8_t*)&client.current_ipterm.payload.first)[i]);
+            }
 
             for(int i = 0; i < client.scr_num; i++) {
                 // recv
+                cout << "debug 1" << endl;
                 Packet packet = client.recv_buffer.dequeue_packet(true);
-
+                cout << "debug 2" << endl;
                 ScreenInfoPacket &recved_pkt = *((ScreenInfoPacket*)packet.payload.first);
                 recved_pkt.server_port = ntohs(recved_pkt.server_port);
                 recved_pkt.server_ip = ntohl(recved_pkt.server_ip);
@@ -717,18 +718,20 @@ bool PresentationLayer::fsm(Client &client) {
 
                 if(DatabaseConnection::get_instance()->OnRecvScreenInfoPacket(packet, client) == false) return false;
 
-                memcpy(&recvbuffer[recvbuffer.size()], &packet.payload.first, sizeof(ScreenInfoPacket));
-                recvbuffer.resize(recvbuffer.size() + sizeof(ScreenInfoPacket));
+                for(int i = 0; i < sizeof(ScreenInfoPacket); i++) {
+                    recvbuffer.push_back(((uint8_t*)&packet.payload.first)[i]);
+                }
             }
 
+            client.is_scr = false;
             // use here
             // uint8_t *ptr = recvbuffer.data();
             // memcpy(ptr, &packet.header, kHeaderSize);
             // memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             // recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
 
-            LOG(Level::DP_R) << "从已认证的客户端收到哑终端/IP终端配置信息包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl; 
+            LOG(Level::DP_R) << "[deptid:" << client.devid << "]" << "从已认证的客户端收到哑终端/IP终端配置信息包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "[deptid:" << client.devid << "]" << "收到内容：" << logify_data(recvbuffer) << std::endl; 
 
             if(client.tty_cnt == client.tty_connected)  {
                 // construct message
@@ -747,7 +750,7 @@ bool PresentationLayer::fsm(Client &client) {
                 for(int i = 0; i < kHeaderSize; i++) {
                     temp_vec.push_back(((uint8_t*)&header)[i]);
                 }
-                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                for(int i = 0; i < sizeof(EndPacket); i++) {
                     temp_vec.push_back(((uint8_t*)&pkt)[i]);
                 }
 
@@ -783,8 +786,8 @@ bool PresentationLayer::fsm(Client &client) {
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
             recvbuffer.resize(kHeaderSize + sizeof(recved_pkt) + packet.payload.second.size());
             
-            LOG(Level::DP_R) << "从已认证的客户端收到结束包的应答包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;      
+            LOG(Level::DP_R) << "[deptid:" << client.devid << "]" << "从已认证的客户端收到结束包的应答包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "[deptid:" << client.devid << "]" << "收到内容：" << logify_data(recvbuffer) << std::endl;      
 
             LENV << "[deptid:" << client.devid << "]" << "服务器收到客户端对结束包的应答包，关闭TCP连接（收到基本/终端=" << client.tty_cnt << "/虚屏=" << client.scr_num << "）" << endl;
 

@@ -27,6 +27,7 @@ StatusCode TransferLayer::try_recv(Client &client) {
         return StatusCode::OK;
     } 
 
+    if(client.is_scr == false) {
     if (!client.recv_buffer.is_full() && client.recv_buffer.current_packet_size()) {
         int num_bytes = recv(client.socket_fd, tmp_buffer, client.recv_buffer.get_num_free_bytes(), 0);
         // error handling
@@ -36,6 +37,20 @@ StatusCode TransferLayer::try_recv(Client &client) {
             return StatusCode::RecvError;
         } else {
             client.recv_buffer.enqueue(tmp_buffer, num_bytes); 
+        }
+    }
+    }
+    else {
+        if (!client.recv_buffer.is_full() && client.scr_packet_size){
+            int num_bytes = recv(client.socket_fd, tmp_buffer, client.recv_buffer.get_num_free_bytes(), 0);
+        // error handling
+        if (num_bytes < 0) {
+            LERR << client.socket_fd << endl;
+            perror("RecvError 2\n");
+            return StatusCode::RecvError;
+        } else {
+            client.recv_buffer.enqueue(tmp_buffer, num_bytes); 
+        }
         }
     }
 
@@ -74,8 +89,8 @@ void TransferLayer::select_loop(int listener) {
 
         // LOG(Level::Debug) << "fdmax: " << fdmax << endl;
         int rv = select(fdmax+1, &read_fds, &write_fds, NULL, NULL);
-        LOG(Level::Debug) << "select: " << rv << endl
-            << "session_set.size() in select: " << session_set.size() << endl;
+        // LOG(Level::Debug) << "select: " << rv << endl
+            // << "session_set.size() in select: " << session_set.size() << endl;
         switch (rv) {
             case -1:
                 LERR << "Select in main loop\n";
@@ -99,7 +114,15 @@ void TransferLayer::select_loop(int listener) {
                             if(PreLayerInstance.fsm(el) == false) {
                                 remove_client(el);
                             }
-                        } else {
+                        }
+                        // else if(el.is_scr == true && (buffer_size >= el.scr_packet_size)) {
+                        //     LOG(Level::Debug) << "Info buffer " << el.recv_buffer.size() << endl;
+                        //     LOG(Level::Debug) << "Should be username " << el.recv_buffer.data + 3 << endl;
+                        //     if(PreLayerInstance.fsm(el) == false) {
+                        //         remove_client(el);
+                        //     }
+                        // } 
+                        else {
                             remove_client(el);
                             break;
                         }
@@ -130,6 +153,8 @@ void TransferLayer::select_loop(int listener) {
                 PreLayerInstance.fsm(el);
             }
         }
+
+        if(el.is_scr == true) PreLayerInstance.fsm(el);
     } // end of main loop
 }
 

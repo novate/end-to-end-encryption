@@ -83,7 +83,9 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
     uint8_t* payload_struct;
     // cout << "Bad 1" << endl;
     if(is_scr == true) {
+        cout << "Final debug" << endl;
         struct_size = sizeof(ScreenInfoPacket);
+        payload_struct = (uint8_t*)(new ScreenInfoPacket);
         dequeue(payload_struct, struct_size);
         payload.first = payload_struct;
         // cout << "Bad 2" << endl;
@@ -164,7 +166,7 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
     size_t vector_size = packet_size - kHeaderSize - struct_size;
 
     cout << "packet_size: " << packet_size << " kHeaderSize: " << kHeaderSize << " struct_size " <<  struct_size << " vector_size " << vector_size << endl;
-    payload.second.reserve(vector_size);
+    payload.second.resize(vector_size);
 
     // cout << "Bad 6" << endl;
     dequeue(payload.second.data(), vector_size);

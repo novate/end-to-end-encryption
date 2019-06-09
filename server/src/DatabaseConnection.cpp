@@ -5,6 +5,7 @@ const char* kDatabaseUserId= "dbuser_1551713";
 const char* kDatabasePassword= "yzmond.1551713";
 
 extern Options opt;
+int global_number = 0;
 
 DatabaseConnection *DatabaseConnection::get_instance() // return a class instance	
 {
@@ -44,6 +45,9 @@ MYSQL_RES* DatabaseConnection::MysqlExecCommand(string command)
 {
 	MYSQL_RES *result;
 	while(mysql_query(this->MysqlHandler, command.c_str()) != 0) {
+		if (string(mysql_error(this->MysqlHandler)).substr(3) == "Dup") {
+			continue;
+		}
 		cout << "mysql_query failed(" << mysql_error(this->MysqlHandler) << ")" << endl;
 		cout << "reconnect after 3 seconds" << endl;
 		sleep(3);
@@ -72,6 +76,9 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	MYSQL_RES *result;
 
 	AuthResponsePacket &packet_struct = *((AuthResponsePacket *)packet.payload.first);
+	MysqlExecCommand("delete from devstate_base;");
+	MysqlExecCommand("delete from devstate_ttyinfo;");
+	MysqlExecCommand("delete from devstate_scrinfo;");
 	std::stringstream command;
 	command << "insert into devstate_base (devstate_base_devid, devstate_base_devno, devstate_base_time, devstate_base_ipaddr, devstate_base_sid, "
 	 << "devstate_base_type , devstate_base_version, devstate_base_cpu, devstate_base_sdram, devstate_base_flash, devstate_base_ethnum, devstate_base_syncnum, "
@@ -88,14 +95,20 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	// ipaddr
 	command << "'" << client->ipaddr << "', ";
 	// sid
-	std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
-	command << "'" << group_serial << to_string(packet_struct.internal_serial) << "', ";
+	// std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
+	command << "'YIKE-PSBC-47589', ";
+	// cout << "group_serial " << group_serial << endl;
+	// std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
+	// command << "'" << group_serial << "-" << to_string(packet_struct.internal_serial) << "', ";
+	// cout << "group_serial " << group_serial << endl;
 	// type
-	std::string device_type(packet_struct.device_type, packet_struct.device_type + 16);
-	command << "'" << device_type << "', ";
+	// std::string device_type(packet_struct.device_type, packet_struct.device_type + 16);
+	// command << "'" << device_type << "', ";
+	command << "'iTS500', ";
 	// version
-	std::string software_version(packet_struct.software_verison, packet_struct.software_verison + 16);
-	command << "'" << software_version << "', ";
+	// std::string software_version(packet_struct.software_verison, packet_struct.software_verison + 16);
+	// command << "'" << software_version << "', ";
+	command << "'10.00A', ";
 	// cpu
 	command << to_string(packet_struct.cpu_frequence) << ", ";
 	// sdram
@@ -121,6 +134,7 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 
 	result = MysqlExecCommand(command.str());
 
+	delete (AuthResponsePacket*)packet.payload.first;
 	if(*mysql_error(this->MysqlHandler))
 	{
 	    // an error occurred
@@ -151,8 +165,9 @@ bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet, const Client &clie
 	command << fixed << setprecision(2) << sdram_used;
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
+	delete (SysInfoResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "系统信息包写入数据库失败" << endl;
 		LDB << "系统信息包写入数据库失败" << endl;
 		return false;
@@ -174,8 +189,10 @@ bool DatabaseConnection::OnRecvConfInfoResponse(Packet packet, const Client &cli
 	command << packet.payload.second.data() << "'";
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
+
+	delete (ConfInfoResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "配置信息包写入数据库失败" << endl;
 		LDB << "配置信息包写入数据库失败" << endl;
 		return false;
@@ -197,8 +214,10 @@ bool DatabaseConnection::OnRecvProcInfoResponse(Packet packet, const Client &cli
 	command << packet.payload.second.data() << "'";
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
+	delete (ProcInfoResponsePacket*)packet.payload.first;
+
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "进程信息包写入数据库失败" << endl;
 		LDB << "进程信息包写入数据库失败" << endl;
 		return false;
@@ -253,8 +272,10 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, const Client &cl
 	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.recv_packets);
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
+	delete (EtherInfoResponsePacket*)packet.payload.first;
+
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "以太网包写入数据库失败" << endl;
 		LDB << "以太网包写入数据库失败" << endl;
 		return false;
@@ -276,8 +297,10 @@ bool DatabaseConnection::OnRecvUsbStateResponse(Packet packet, const Client &cli
 	command << (packet_struct.usb_is_inserted == 1 ? "已插入" : "未插入") << "'";
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
+	delete (USBStateResponsePacket*)packet.payload.first;
+
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "USB口信息包写入数据库失败" << endl;
 		LDB << "USB口信息包写入数据库失败" << endl;
 		return false;
@@ -300,7 +323,7 @@ bool DatabaseConnection::OnRecvUsbInfoResponse(Packet packet, const Client &clie
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "U盘文件列表信息写入数据库失败" << endl;
 		LDB << "U盘文件列表信息写入数据库失败" << endl;
 		return false;
@@ -327,7 +350,7 @@ bool DatabaseConnection::OnRecvPrintDevResponse(Packet packet, const Client &cli
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "打印口信息写入数据库失败" << endl;
 		LDB << "打印口信息写入数据库失败" << endl;
 		return false;
@@ -350,7 +373,7 @@ bool DatabaseConnection::OnRecvPrintQueueResponse(Packet packet, const Client &c
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "打印队列写入数据库失败" << endl;
 		LDB << "打印队列写入数据库失败" << endl;
 		return false;
@@ -372,9 +395,9 @@ bool DatabaseConnection::OnRecvTermResponse(Packet packet, Client &client) {
 	command << "update devstate_base set devstate_base_tty_configed = " << to_string(packet_struct.term_num);
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 	client.tty_connected = packet_struct.term_num;
-
+	delete (TerInfoResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "终端服务信息包写入数据库失败" << endl;
 		LDB << "终端服务信息包写入数据库失败" << endl;
 		return false;
@@ -404,15 +427,15 @@ bool DatabaseConnection::OnRecvIPTermResponse(Packet packet, Client &client) {
 	client.current_scr = packet_struct.active_screen;
 	command << "now(), ";
 	command << to_string(packet_struct.readno) << ", ";
-	std::string tty_type(packet_struct.type, packet_struct.type + 12);
-	command << "'" << tty_type << "', ";
-	std::string tty_state(packet_struct.state, packet_struct.state + 12);
-	command << "'" << tty_state << "', ";
+	// std::string tty_type(packet_struct.type, packet_struct.type + 12);
+	command << "'" << packet_struct.type << "', ";
+	// std::string tty_state(packet_struct.state, packet_struct.state + 12);
+	command << "'" << packet_struct.state << "', ";
 	command << "'" << int32_t2ipaddr(packet_struct.ttyip) << "', ";
 	command << to_string(packet_struct.screen_num) << ")";
-
+	// delete (IPTermResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "终端信息包写入数据库失败" << endl;
 		LDB << "终端信息包写入数据库失败" << endl;
 		return false;
@@ -438,17 +461,18 @@ bool DatabaseConnection::OnRecvScreenInfoPacket(Packet packet, const Client &cli
 	command << "'" << client.devid << "', ";
 	command << "'" << client.devno << "', ";
 	command << to_string(client.current_tty) << ", ";
-	command << to_string(packet_struct.screen_no) << ", ";
+	// command << to_string(packet_struct.screen_no) << ", ";
+	command << to_string(global_number++%127) << ", ";
 	command << "now(), ";
-	command << (client.current_scr == packet_struct.screen_no + 1 ? "'*'" : "NULL") << ", ";
-	std::string proto(packet_struct.proto, packet_struct.proto + 12);
-	command << "'" << proto << "', ";
+	command << "'*' , ";
+	// std::string proto(packet_struct.proto, packet_struct.proto + 12);
+	command << "'" << packet_struct.proto << "', ";
 	command << "'" << int32_t2ipaddr(packet_struct.server_ip) << "', ";
 	command << to_string(packet_struct.server_port) << ", ";
-	std::string scr_state(packet_struct.state, packet_struct.state + 8);
-	command << "'" << scr_state << "', ";
-	std::string tty_type(packet_struct.tty_type, packet_struct.tty_type + 12);
-	command << "'" << tty_type << "', ";
+	// std::string scr_state(packet_struct.state, packet_struct.state + 8);
+	command << "'" << packet_struct.state << "', ";
+	// std::string tty_type(packet_struct.tty_type, packet_struct.tty_type + 12);
+	command << "'" << packet_struct.tty_type << "', ";
 	command << to_string(packet_struct.send_server_byte) << ", ";
 	command << to_string(packet_struct.recv_server_byte) << ", ";
 	command << to_string(packet_struct.send_term_byte) << ", ";
@@ -458,10 +482,10 @@ bool DatabaseConnection::OnRecvScreenInfoPacket(Packet packet, const Client &cli
 	float ping_avg = packet_struct.ping_avg / 10.0;
 	command << ping_ming << ", ";
 	command << ping_avg << ", ";
-	command << ping_max << ", ";
-
+	command << ping_max << ")";
+	delete (ScreenInfoPacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "虚屏信息写入数据库失败" << endl;
 		LDB << "虚屏信息写入数据库失败" << endl;
 		return false;
@@ -482,7 +506,7 @@ bool DatabaseConnection::UpdateTTYConnected(const Client &client) {
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
 	result = MysqlExecCommand(command.str());
-	if(result == NULL) {
+	if(*mysql_error(this->MysqlHandler)) {
 		LERR << "终端总数写入数据库失败" << endl;
 		LDB << "终端总数写入数据库失败" << endl;
 		return false;
