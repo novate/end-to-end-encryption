@@ -15,7 +15,8 @@ PresentationLayer::PresentationLayer()
         return;
 }
 
-bool PresentationLayer::fsm(Client &client) { 
+bool PresentationLayer::fsm(Client &client) {
+    cout << "SessionState: " << int(client.state) << endl;
     // send
     switch (client.state) {
         // first message
@@ -23,6 +24,7 @@ bool PresentationLayer::fsm(Client &client) {
             // first message
             // construct message
             // header
+            cout << "fsm good 1\n";
             PacketHeader header;
             // packet_type: hton
             header.direction = 0x11;
@@ -50,6 +52,7 @@ bool PresentationLayer::fsm(Client &client) {
             } 
             pkt.random_num = htonl(random_num);
             pkt.svr_time = htonl(svr_time);
+            cout << "fsm good 2\n";
 
             vector<uint8_t> temp_vec;
 
