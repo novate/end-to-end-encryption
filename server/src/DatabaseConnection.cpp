@@ -119,6 +119,8 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	command << "'" << to_string(packet_struct.prnnum) << "', 0, 0, 0, 0);\n";
 	client->prnnum = packet_struct.prnnum;
 
+	string temp = command.str();
+	cout << temp << endl;
 	result = MysqlExecCommand(command.str());
 
 	if(*mysql_error(this->MysqlHandler))
