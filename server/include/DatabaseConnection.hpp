@@ -13,14 +13,6 @@
 #include "types.hpp"
 using namespace std;
 
-// #define DatabaseName "Simple_chat_room"
-// #define DatabaseUserId "cyanic"
-// #define DatabasePassword "1985727yyhstc"
-
-
-// const string kDatabaseName = "Simple_chat_room";
-
-
 // use singleton design
 // example: https://sourcemaking.com/design_patterns/singleton/cpp/1
 class DatabaseConnection {
