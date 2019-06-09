@@ -354,8 +354,9 @@ enum class SessionState: uint8_t {
 	WaitPrnInfo = 0x08,
 	WaitPrnQueue = 0x09,
 	WaitTermInfo = 0x0a,
-	WaitDumpTermInfo = 0x0b,
-	WaitIPTermInfo = 0x0c,
+	WaitIPTermInfo = 0x0b,
+	WaitScrInfo = 0x0c,
+	End = 0x0d,
 };
 
 struct Client {
@@ -388,11 +389,12 @@ public:
     uint8_t prnnum;
     int tty_connected;
     uint16_t current_tty;
+	int tty_cnt = 0;
+	int scr_num;
     uint8_t current_scr;
     uint8_t ether_last=0; // ether包的倒计时器
 	uint8_t dumb_term[16];
     uint8_t ip_term[254];
-	uint16_t term_num;
 };
 
 const u_char kSecret[4096]={

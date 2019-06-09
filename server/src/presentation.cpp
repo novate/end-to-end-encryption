@@ -51,15 +51,28 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.random_num = htonl(random_num);
             pkt.svr_time = htonl(svr_time);
 
-            for(int i =0; i < packet_size; i++) {
-                client.send_buffer.push()
+            vector<uint8_t> temp_vec;
+
+            for(int i = 0; i < kHeaderSize; i++) {
+                temp_vec.push_back(((uint8_t*)&header)[i]);
             }
+            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                temp_vec.push_back(((uint8_t*)&pkt)[i]);
+            }
+
+            client.send_buffer.push(temp_vec);
+
+            client.state = SessionState::WaitAuth;
+            // TODO Send Packet
+
             // vector<pair<uint8_t*, size_t>> buffer { 
             //     make_pair((uint8_t*)&header, sizeof(header)), 
             //     make_pair((uint8_t*)&pkt, sizeof(pkt)) 
             // };
             // client.send_msg(buffer);
-
+            return true;
+            }
+        case SessionState::WaitAuth : {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
             if (packet.header.direction != 0x91) {
@@ -71,6 +84,7 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
+            packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
             recved_pkt.required_version_main = ntohs(recved_pkt.required_version_main);
             if (recved_pkt.required_version_main > 0x03) {
@@ -89,6 +103,7 @@ bool PresentationLayer::fsm(Client &client) {
             }
 
             AuthResponsePacket &recved_pkt2 = *((AuthResponsePacket*)packet2.payload.first);
+            packet2.header.packet_size = ntohs(packet2.header.packet_size);
             recved_pkt2.payload_size = ntohs(recved_pkt2.payload_size);
             recved_pkt2.random_num = ntohl(recved_pkt2.random_num);
             uint8_t* encrypted;
@@ -103,11 +118,9 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt2.internal_serial = ntohs(recved_pkt2.internal_serial);
             recved_pkt2.devid = ntohl(recved_pkt2.devid);
             client.ether_last = recved_pkt2.ethnum;
-            DatabaseConnection::get_instance()->OnRecvAuthResponse(packet, &client);
+            if(DatabaseConnection::get_instance()->OnRecvAuthResponse(packet, &client) == false) return false;
 
-            return true;
-        }
-        case PacketType::AuthResponse: {
+            // ------------------------------------------Send Packet SysInfo----------------------------
             // construct message
             // header
             PacketHeader header;
@@ -120,12 +133,27 @@ bool PresentationLayer::fsm(Client &client) {
             SysInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<uint8_t*, size_t>> buffer { 
-                make_pair((uint8_t*)&header, sizeof(header)), 
-                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
-            };
-            client.send_msg(buffer);
+            vector<uint8_t> temp_vec;
+            for(int i = 0; i < kHeaderSize; i++) {
+                temp_vec.push_back(((uint8_t*)&header)[i]);
+            }
+            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                temp_vec.push_back(((uint8_t*)&pkt)[i]);
+            }
 
+            client.send_buffer.push(temp_vec);
+
+            client.state = SessionState::WaitSysInfo;
+
+            // vector<pair<uint8_t*, size_t>> buffer { 
+            //     make_pair((uint8_t*)&header, sizeof(header)), 
+            //     make_pair((uint8_t*)&pkt, sizeof(pkt)) 
+            // };
+            // client.send_msg(buffer);
+
+            return true;
+        }
+        case SessionState::WaitSysInfo: {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
             if (packet.header.direction != 0x91) {
@@ -137,6 +165,7 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             SysInfoResponsePacket &recved_pkt = *((SysInfoResponsePacket*)packet.payload.first);
+            packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
             recved_pkt.user_cpu_time = ntohl(recved_pkt.user_cpu_time);
             recved_pkt.nice_cpu_time = ntohl(recved_pkt.nice_cpu_time);
@@ -144,11 +173,9 @@ bool PresentationLayer::fsm(Client &client) {
             recved_pkt.idle_cpu_time = ntohl(recved_pkt.idle_cpu_time);
             recved_pkt.freed_memory = ntohl(recved_pkt.freed_memory);
 
-            // writeToDataBase(client, packet);
+            DatabaseConnection::get_instance()->OnRecvSysInfoResponse(packet, client);
 
-            return true;
-        }
-        case PacketType::SysInfoResponse: {
+            // -------------------------------------------Send Conf Packet ----------------------------------
             // construct message
             // header
             PacketHeader header;
@@ -158,15 +185,24 @@ bool PresentationLayer::fsm(Client &client) {
             header.packet_size = htons(8);
 
             // packet struct
-            SysInfoRequestPacket pkt;
+            ConfInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<uint8_t*, size_t>> buffer { 
-                make_pair((uint8_t*)&header, sizeof(header)), 
-                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
-            };
-            client.send_msg(buffer);
+            vector<uint8_t> temp_vec;
+            for(int i = 0; i < kHeaderSize; i++) {
+                temp_vec.push_back(((uint8_t*)&header)[i]);
+            }
+            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                temp_vec.push_back(((uint8_t*)&pkt)[i]);
+            }
 
+            client.send_buffer.push(temp_vec);
+
+            client.state = SessionState::WaitConfigInfo;
+
+            return true;
+        }
+        case SessionState::WaitConfigInfo: {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
             if (packet.header.direction != 0x91) {
@@ -179,13 +215,12 @@ bool PresentationLayer::fsm(Client &client) {
             }
 
             ConfInfoResponsePacket &recved_pkt = *((ConfInfoResponsePacket*)packet.payload.first);
+            packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
 
-            // writeToDataBase(client, packet);
+            if(DatabaseConnection::get_instance()->OnRecvConfInfoResponse(packet, client) == false) return false;
 
-            return true;
-        }
-        case PacketType::ConfInfoResponse: {
+            // --------------------------------------------------- send Proc Packet ---------------------------------
             // construct message
             // header
             PacketHeader header;
@@ -195,15 +230,24 @@ bool PresentationLayer::fsm(Client &client) {
             header.packet_size = htons(8);
 
             // packet struct
-            SysInfoRequestPacket pkt;
+            ProcInfoRequestPacket pkt;
             pkt.payload_size = 0;
 
-            vector<pair<uint8_t*, size_t>> buffer { 
-                make_pair((uint8_t*)&header, sizeof(header)), 
-                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
-            };
-            client.send_msg(buffer);
+            vector<uint8_t> temp_vec;
+            for(int i = 0; i < kHeaderSize; i++) {
+                temp_vec.push_back(((uint8_t*)&header)[i]);
+            }
+            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                temp_vec.push_back(((uint8_t*)&pkt)[i]);
+            }
 
+            client.send_buffer.push(temp_vec);
+
+            client.state = SessionState::WaitProcInfo;
+
+            return true;
+        }
+        case SessionState::WaitProcInfo: {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
             if (packet.header.direction != 0x91) {
@@ -216,107 +260,226 @@ bool PresentationLayer::fsm(Client &client) {
             }
 
             ProcInfoResponsePacket &recved_pkt = *((ProcInfoResponsePacket*)packet.payload.first);
+            packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-            // writeToDataBase(client, packet);
+
+            if(DatabaseConnection::get_instance()->OnRecvProcInfoResponse(packet, client) == false) return false;
+
+            switch(client.ethnum) {
+                case 0x00: {
+                    // TODO
+                    // ------------------------------------------- send TTYInfo Packet ---------------------------------
+                    // construct message
+                    // header
+                    PacketHeader header;
+                    // packet_type: hton
+                    header.direction = 0x11;
+                    header.packet_type = 0x09;
+                    header.packet_size = htons(8);
+        
+                    // packet struct
+                    TerInfoRequestPacket pkt;
+                    pkt.payload_size = 0;
+
+                    vector<uint8_t> temp_vec;
+                    for(int i = 0; i < kHeaderSize; i++) {
+                        temp_vec.push_back(((uint8_t*)&header)[i]);
+                    }
+                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                        temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                    }
+
+                    client.send_buffer.push(temp_vec);
+
+                    client.state = SessionState::WaitTermInfo;
+                    break;
+                }
+                case 0x02:{
+                    // construct message
+                    // header
+                    PacketHeader header;
+                    // packet_type: hton
+                    header.direction = 0x11;
+                    header.packet_type = 0x05;
+                    header.packet_size = htons(8);
+
+                    // packet struct
+                    EtherInfoRequestPacket pkt;
+                    pkt.port = htons(1);
+                    pkt.payload_size = 0;
+
+                    vector<uint8_t> temp_vec;
+                    for(int i = 0; i < kHeaderSize; i++) {
+                        temp_vec.push_back(((uint8_t*)&header)[i]);
+                    }
+                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                        temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                    }
+
+                    client.send_buffer.push(temp_vec);
+
+                    // No Break
+                }
+                case 0x01:{
+                    // construct message
+                    // header
+                    PacketHeader header;
+                    // packet_type: hton
+                    header.direction = 0x11;
+                    header.packet_type = 0x05;
+                    header.packet_size = htons(8);
+
+                    // packet struct
+                    EtherInfoRequestPacket pkt;
+                    pkt.port = htons(0);
+                    pkt.payload_size = 0;
+
+                    vector<uint8_t> temp_vec;
+                    for(int i = 0; i < kHeaderSize; i++) {
+                        temp_vec.push_back(((uint8_t*)&header)[i]);
+                    }
+                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                        temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                    }
+
+                    client.send_buffer.push(temp_vec);
+
+                    client.state = SessionState::WaitEtheInfo;
+
+                    break;
+                }
+
+            }
 
             return true;
         }
-        // Proc包后面可能是Ether包，Ether包后面也可能是Ether包。采用发1收1的方法，同时要看ether_last还剩下多少，ether_last收一个就减去一个。
-        case PacketType::ProcInfoResponse:
-        case PacketType::EtherInfoResponse: {
-            if (client.ether_last == 0) {
-                client.RecvPacketType = PacketType::PrintQueueResponse;
-                return true;
-            }
-            // construct message
-            // header
-            PacketHeader header;
-            // packet_type: hton
-            header.direction = 0x11;
-            header.packet_type = 0x05;
-            header.packet_size = htons(8);
+        case SessionState::WaitEtheInfo: {
+            switch(client.ethnum) {
+                case 0x02: {
+                    // recv
+                    Packet packet = client.recv_buffer.dequeue_packet();
+                    if (packet.header.direction != 0x91) {
+                        LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
+                        return false;
+                    }
+                    if (packet.header.packet_type != 0x05) {
+                        LERR << "收到的包类型错误，理想=0x05，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
+                        return false;
+                    }
+                    EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
+                    packet.header.packet_size = ntohs(packet.header.packet_size);
+                    recved_pkt.port = ntohs(recved_pkt.port);
+                    recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+                    recved_pkt.options = ntohs(recved_pkt.options);
+                    recved_pkt.addr = ntohl(recved_pkt.addr);
+                    recved_pkt.mask = ntohl(recved_pkt.mask);
+                    recved_pkt.addr_port_1 = ntohl(recved_pkt.addr_port_1);
+                    recved_pkt.mask_port_1 = ntohl(recved_pkt.mask_port_1);
+                    recved_pkt.addr_port_2 = ntohl(recved_pkt.addr_port_2);
+                    recved_pkt.mask_port_2 = ntohl(recved_pkt.mask_port_2);
+                    recved_pkt.addr_port_3 = ntohl(recved_pkt.addr_port_3);
+                    recved_pkt.mask_port_3 = ntohl(recved_pkt.mask_port_3);
+                    recved_pkt.addr_port_4 = ntohl(recved_pkt.addr_port_4);
+                    recved_pkt.mask_port_4 = ntohl(recved_pkt.mask_port_4);
+                    recved_pkt.addr_port_5 = ntohl(recved_pkt.addr_port_5);
+                    recved_pkt.mask_port_5 = ntohl(recved_pkt.mask_port_5);
+                    recved_pkt.send_bytes = ntohl(recved_pkt.send_bytes);
+                    recved_pkt.send_packets = ntohl(recved_pkt.send_packets);
+                    recved_pkt.send_errs = ntohl(recved_pkt.send_errs);
+                    recved_pkt.send_drop = ntohl(recved_pkt.send_drop);
+                    recved_pkt.send_fifo = ntohl(recved_pkt.send_fifo);
+                    recved_pkt.send_frame = ntohl(recved_pkt.send_frame);
+                    recved_pkt.send_compressed = ntohl(recved_pkt.send_compressed);
+                    recved_pkt.send_multicast = ntohl(recved_pkt.send_multicast);
+                    recved_pkt.recv_bytes = ntohl(recved_pkt.recv_bytes);
+                    recved_pkt.recv_packets = ntohl(recved_pkt.recv_packets);
+                    recved_pkt.recv_errs = ntohl(recved_pkt.recv_errs);
+                    recved_pkt.recv_drop = ntohl(recved_pkt.recv_drop);
+                    recved_pkt.recv_fifo = ntohl(recved_pkt.recv_fifo);
+                    recved_pkt.recv_frame = ntohl(recved_pkt.recv_frame);
+                    recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
+                    recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
 
-            // packet struct
-            EtherInfoRequestPacket pkt;
-            pkt.port = htons(client.ether_last-1);
-            pkt.payload_size = 0;
+                    if(DatabaseConnection::get_instance()->OnRecvEtherInfoResponse(packet, client) == false) return false;
+                    // No break
+                }
+                case 0x01: {
+                    // recv
+                    Packet packet = client.recv_buffer.dequeue_packet();
+                    if (packet.header.direction != 0x91) {
+                        LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
+                        return false;
+                    }
+                    if (packet.header.packet_type != 0x05) {
+                        LERR << "收到的包类型错误，理想=0x05，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
+                        return false;
+                    }
+                    EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
+                    packet.header.packet_size = ntohs(packet.header.packet_size);
+                    recved_pkt.port = ntohs(recved_pkt.port);
+                    recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+                    recved_pkt.options = ntohs(recved_pkt.options);
+                    recved_pkt.addr = ntohl(recved_pkt.addr);
+                    recved_pkt.mask = ntohl(recved_pkt.mask);
+                    recved_pkt.addr_port_1 = ntohl(recved_pkt.addr_port_1);
+                    recved_pkt.mask_port_1 = ntohl(recved_pkt.mask_port_1);
+                    recved_pkt.addr_port_2 = ntohl(recved_pkt.addr_port_2);
+                    recved_pkt.mask_port_2 = ntohl(recved_pkt.mask_port_2);
+                    recved_pkt.addr_port_3 = ntohl(recved_pkt.addr_port_3);
+                    recved_pkt.mask_port_3 = ntohl(recved_pkt.mask_port_3);
+                    recved_pkt.addr_port_4 = ntohl(recved_pkt.addr_port_4);
+                    recved_pkt.mask_port_4 = ntohl(recved_pkt.mask_port_4);
+                    recved_pkt.addr_port_5 = ntohl(recved_pkt.addr_port_5);
+                    recved_pkt.mask_port_5 = ntohl(recved_pkt.mask_port_5);
+                    recved_pkt.send_bytes = ntohl(recved_pkt.send_bytes);
+                    recved_pkt.send_packets = ntohl(recved_pkt.send_packets);
+                    recved_pkt.send_errs = ntohl(recved_pkt.send_errs);
+                    recved_pkt.send_drop = ntohl(recved_pkt.send_drop);
+                    recved_pkt.send_fifo = ntohl(recved_pkt.send_fifo);
+                    recved_pkt.send_frame = ntohl(recved_pkt.send_frame);
+                    recved_pkt.send_compressed = ntohl(recved_pkt.send_compressed);
+                    recved_pkt.send_multicast = ntohl(recved_pkt.send_multicast);
+                    recved_pkt.recv_bytes = ntohl(recved_pkt.recv_bytes);
+                    recved_pkt.recv_packets = ntohl(recved_pkt.recv_packets);
+                    recved_pkt.recv_errs = ntohl(recved_pkt.recv_errs);
+                    recved_pkt.recv_drop = ntohl(recved_pkt.recv_drop);
+                    recved_pkt.recv_fifo = ntohl(recved_pkt.recv_fifo);
+                    recved_pkt.recv_frame = ntohl(recved_pkt.recv_frame);
+                    recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
+                    recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
 
-            vector<pair<uint8_t*, size_t>> buffer { 
-                make_pair((uint8_t*)&header, sizeof(header)), 
-                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
-            };
-            client.send_msg(buffer);
+                    if(DatabaseConnection::get_instance()->OnRecvEtherInfoResponse(packet, client) == false) return false;
 
-            // recv
-            Packet packet = client.recv_buffer.dequeue_packet();
-            if (packet.header.direction != 0x91) {
-                LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
-                return false;
+                    // ------------------------------------------- send TTYInfo Packet ---------------------------------
+                    // construct message
+                    // header
+                    PacketHeader header;
+                    // packet_type: hton
+                    header.direction = 0x11;
+                    header.packet_type = 0x09;
+                    header.packet_size = htons(8);
+        
+                    // packet struct
+                    TerInfoRequestPacket pkt;
+                    pkt.payload_size = 0;
+
+                    vector<uint8_t> temp_vec;
+                    for(int i = 0; i < kHeaderSize; i++) {
+                        temp_vec.push_back(((uint8_t*)&header)[i]);
+                    }
+                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                        temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                    }
+
+                    client.send_buffer.push(temp_vec);
+
+                    client.state = SessionState::WaitTermInfo;
+
+                    break;
+                }
             }
-            if (packet.header.packet_type != 0x05) {
-                LERR << "收到的包类型错误，理想=0x05，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
-                return false;
-            }
-            EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
-            recved_pkt.port = ntohs(recved_pkt.port);
-            if (recved_pkt.port != client.ether_last-1) {
-                LERR << "收到的以太口错误，理想=" << (u_int)client.ether_last-1 << "，实际=" << hex << (u_int)recved_pkt.port << endl;
-                return false;
-            }
-            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-            recved_pkt.options = ntohs(recved_pkt.options);
-            recved_pkt.addr = ntohl(recved_pkt.addr);
-            recved_pkt.mask = ntohl(recved_pkt.mask);
-            recved_pkt.addr_port_1 = ntohl(recved_pkt.addr_port_1);
-            recved_pkt.mask_port_1 = ntohl(recved_pkt.mask_port_1);
-            recved_pkt.addr_port_2 = ntohl(recved_pkt.addr_port_2);
-            recved_pkt.mask_port_2 = ntohl(recved_pkt.mask_port_2);
-            recved_pkt.addr_port_3 = ntohl(recved_pkt.addr_port_3);
-            recved_pkt.mask_port_3 = ntohl(recved_pkt.mask_port_3);
-            recved_pkt.addr_port_4 = ntohl(recved_pkt.addr_port_4);
-            recved_pkt.mask_port_4 = ntohl(recved_pkt.mask_port_4);
-            recved_pkt.addr_port_5 = ntohl(recved_pkt.addr_port_5);
-            recved_pkt.mask_port_5 = ntohl(recved_pkt.mask_port_5);
-            recved_pkt.send_bytes = ntohl(recved_pkt.send_bytes);
-            recved_pkt.send_packets = ntohl(recved_pkt.send_packets);
-            recved_pkt.send_errs = ntohl(recved_pkt.send_errs);
-            recved_pkt.send_drop = ntohl(recved_pkt.send_drop);
-            recved_pkt.send_fifo = ntohl(recved_pkt.send_fifo);
-            recved_pkt.send_frame = ntohl(recved_pkt.send_frame);
-            recved_pkt.send_compressed = ntohl(recved_pkt.send_compressed);
-            recved_pkt.send_multicast = ntohl(recved_pkt.send_multicast);
-            recved_pkt.recv_bytes = ntohl(recved_pkt.recv_bytes);
-            recved_pkt.recv_packets = ntohl(recved_pkt.recv_packets);
-            recved_pkt.recv_errs = ntohl(recved_pkt.recv_errs);
-            recved_pkt.recv_drop = ntohl(recved_pkt.recv_drop);
-            recved_pkt.recv_fifo = ntohl(recved_pkt.recv_fifo);
-            recved_pkt.recv_frame = ntohl(recved_pkt.recv_frame);
-            recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
-            recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
-            
-            // writeToDataBase(client, packet);
-            client.ether_last--;
-            return true;
         }
-        case PacketType::PrintQueueResponse: {
-            // construct message
-            // header
-            PacketHeader header;
-            // packet_type: hton
-            header.direction = 0x11;
-            header.packet_type = 0x09;
-            header.packet_size = htons(8);
-
-            // packet struct
-            SysInfoRequestPacket pkt;
-            pkt.payload_size = 0;
-
-            vector<pair<uint8_t*, size_t>> buffer { 
-                make_pair((uint8_t*)&header, sizeof(header)), 
-                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
-            };
-            client.send_msg(buffer);
-
+        case SessionState::WaitTermInfo: {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
             if (packet.header.direction != 0x91) {
@@ -328,42 +491,144 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
             TerInfoResponsePacket &recved_pkt = *((TerInfoResponsePacket*)packet.payload.first);
+            packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
             recved_pkt.term_num = ntohs(recved_pkt.term_num);
+            if(DatabaseConnection::get_instance()->OnRecvTermResponse(packet, client) == false) return false;
+
+            // ------------------------------------------- Send IP/Dumb Packet ----------------------------------
             for (int i = 0; i < 16; i++) {
                 client.dumb_term[i] = recved_pkt.dumb_term[i];
+                if(client.dumb_term[i] == 0x00) continue;
+                // construct message
+                // header
+                PacketHeader header;
+                // packet_type: hton
+                header.direction = 0x11;
+                header.packet_type = 0x0a;
+                header.packet_size = htons(8);
+
+                // packet struct
+                IPTermRequestPacket pkt;
+                pkt.ttyno = i + 1;
+                pkt.payload_size = 0;
+
+                vector<uint8_t> temp_vec;
+                for(int i = 0; i < kHeaderSize; i++) {
+                    temp_vec.push_back(((uint8_t*)&header)[i]);
+                }
+                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                    temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                }
+
+                client.send_buffer.push(temp_vec);
             }
             for (int i = 0; i < 254; i++) {
                 client.ip_term[i] = recved_pkt.ip_term[i];
+                if(client.ip_term[i] == 0x00) continue;
+                // construct message
+                // header
+                PacketHeader header;
+                // packet_type: hton
+                header.direction = 0x11;
+                header.packet_type = 0x0b;
+                header.packet_size = htons(8);
+
+                // packet struct
+                IPTermRequestPacket pkt;
+                pkt.ttyno = i + 1;
+                pkt.payload_size = 0;
+
+                vector<uint8_t> temp_vec;
+                for(int i = 0; i < kHeaderSize; i++) {
+                    temp_vec.push_back(((uint8_t*)&header)[i]);
+                }
+                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                    temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                }
+
+                client.send_buffer.push(temp_vec);
             }
-            client.term_num = recved_pkt.term_num;
-            // writeToDataBase(client, packet);
+
+            client.state = SessionState::WaitIPTermInfo;
 
             return true;
         }
 
-        // TODO: 这里放哑终端的和IP终端的
+        case SessionState::WaitIPTermInfo: {
+            // recv
+            Packet packet = client.recv_buffer.dequeue_packet();
+            if (packet.header.direction != 0x91) {
+                LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
+                return false;
+            }
+            if (packet.header.packet_type != 0x0a || packet.header.packet_type != 0x0b) {
+                LERR << "收到的包类型错误，理想=0x09，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
+                return false;
+            }
+            IPTermResponsePacket &recved_pkt = *((IPTermResponsePacket*)packet.payload.first);
+            packet.header.packet_size = ntohs(packet.header.packet_size);
+            recved_pkt.ttyno = ntohs(recved_pkt.ttyno);
+            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+            recved_pkt.ttyip = ntohs(recved_pkt.ttyip);
+            if(DatabaseConnection::get_instance()->OnRecvIPTermResponse(packet, client) == false) return false;
+            client.tty_cnt++;
+            client.scr_num = (int)recved_pkt.screen_num;
+            if(recved_pkt.screen_num != 0x00) client.state = SessionState::WaitScrInfo;
 
-        // 一切结束
-        case PacketType::End_all: {
-            // construct message
-            // header
-            PacketHeader header;
-            // packet_type: hton
-            header.direction = 0x11;
-            header.packet_type = 0xff;
-            header.packet_size = htons(8);
+            return true;
+        }
 
-            // packet struct
-            SysInfoRequestPacket pkt;
-            pkt.payload_size = 0;
+        case SessionState::WaitScrInfo: {
+            for(int i = 0; i < client.scr_num; i++) {
+                // recv
+                Packet packet = client.recv_buffer.dequeue_packet(true);
 
-            vector<pair<uint8_t*, size_t>> buffer { 
-                make_pair((uint8_t*)&header, sizeof(header)), 
-                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
-            };
-            client.send_msg(buffer);
+                ScreenInfoPacket &recved_pkt = *((ScreenInfoPacket*)packet.payload.first);
+                recved_pkt.server_port = ntohs(recved_pkt.server_port);
+                recved_pkt.server_ip = ntohl(recved_pkt.server_ip);
+                recved_pkt.time = ntohl(recved_pkt.time);
+                recved_pkt.send_term_byte = ntohl(recved_pkt.send_term_byte);
+                recved_pkt.recv_term_byte = ntohl(recved_pkt.recv_term_byte);
+                recved_pkt.send_server_byte = ntohl(recved_pkt.send_server_byte);
+                recved_pkt.recv_server_byte = ntohl(recved_pkt.recv_server_byte);
+                recved_pkt.ping_min = ntohl(recved_pkt.ping_min);
+                recved_pkt.ping_avg = ntohl(recved_pkt.ping_avg);
+                recved_pkt.ping_max = ntohl(recved_pkt.ping_max);
 
+                if(DatabaseConnection::get_instance()->OnRecvScreenInfoPacket(packet, client) == false) return false;
+
+            }
+            if(client.tty_cnt == client.tty_connected)  {
+                // construct message
+                // header
+                PacketHeader header;
+                // packet_type: hton
+                header.direction = 0x11;
+                header.packet_type = 0xff;
+                header.packet_size = htons(8);
+
+                // packet struct
+                EndPacket pkt;
+                pkt.payload_size = 0;
+
+                vector<uint8_t> temp_vec;
+                for(int i = 0; i < kHeaderSize; i++) {
+                    temp_vec.push_back(((uint8_t*)&header)[i]);
+                }
+                for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                    temp_vec.push_back(((uint8_t*)&pkt)[i]);
+                }
+
+                client.send_buffer.push(temp_vec);
+
+                client.state = SessionState::End;
+            }
+            else client.state = SessionState::WaitIPTermInfo;
+
+            return true;
+        }
+        case SessionState::End: {
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();
             if (packet.header.direction != 0x91) {
@@ -377,7 +642,7 @@ bool PresentationLayer::fsm(Client &client) {
 
             LENV << "服务器收到客户端的应答报文，关闭TCP连接" << endl;
 
-            // writeToDataBase(client, packet);
+            if(DatabaseConnection::get_instance()->UpdateTTYConnected(client) == false) return false;
 
             return true;
         }

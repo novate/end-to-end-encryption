@@ -36,7 +36,7 @@ class DatabaseConnection {
 		bool OnRecvUsbInfoResponse(Packet packet, const Client &client);
 		bool OnRecvPrintDevResponse(Packet packet, const Client &client);
 		bool OnRecvPrintQueueResponse(Packet packet, const Client &client);
-		bool OnRecvTermResponse(Packet packet, const Client &client);
+		bool OnRecvTermResponse(Packet packet, Client &client);
 		bool OnRecvIPTermResponse(Packet packet, Client &client);
 		bool OnRecvScreenInfoPacket(Packet packet, const Client &client);
 		bool UpdateTTYConnected(const Client &client);

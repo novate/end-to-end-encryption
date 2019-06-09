@@ -226,7 +226,7 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, const Client &cl
 	else return true;
 }
 
-bool DatabaseConnection::OnRecvTermResponse(Packet packet, const Client &client) {
+bool DatabaseConnection::OnRecvTermResponse(Packet packet, Client &client) {
 	// sql result handler
 	MYSQL_RES *result;
 
@@ -236,6 +236,7 @@ bool DatabaseConnection::OnRecvTermResponse(Packet packet, const Client &client)
 
 	command << "update devstate_base set devstate_base_tty_configed = " << to_string(packet_struct.term_num);
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+	client.tty_connected = packet_struct.term_num;
 
 	result = MysqlExecCommand(command.str());
 	if(result == NULL) return false;

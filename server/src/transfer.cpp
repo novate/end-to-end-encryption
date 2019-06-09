@@ -111,6 +111,13 @@ void TransferLayer::select_loop(int listener) {
                 break;
         } // end of switch
     } // end of main loop
+
+    for(auto &el: session_set) {
+        if(el.state == SessionState::Acceptance) {
+            // send first packet
+            PreLayerInstance.fsm(el);
+        }
+    }
 }
 
 int TransferLayer::reset_rw_fd_sets(fd_set &read_fds, fd_set &write_fds) {
@@ -197,7 +204,7 @@ int TransferLayer::get_listener(const short port) {
     fcntl(server_fd, F_SETFL, flags|O_NONBLOCK);
 
     struct sockaddr_in server_addr; 
-    server_addr.sin_family = AF_INET; 
+    server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(port); 
     int server_addrlen = sizeof(server_addr);

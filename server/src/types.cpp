@@ -84,7 +84,7 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
         dequeue(payload_struct, struct_size);
         payload.first = payload_struct;
 
-        size_t vector_size = header.packet_size - kHeaderSize - struct_size;
+        size_t vector_size = header.packet_size - struct_size;
         payload.second.reserve(vector_size);
         dequeue(payload.second.data(), vector_size);
 
@@ -122,10 +122,7 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
         }
         case PacketType::IPTermResponse: {
             struct_size = sizeof(IPTermResponsePacket);
-            break;
-        }
-        case PacketType::DumbTerResponse: {
-            struct_size = sizeof(IPTermResponsePacket);
+            packet_size = sizeof(IPTermResponsePacket) + kHeaderSize;
             break;
         }
         case PacketType::End: {
@@ -145,7 +142,7 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
     dequeue(payload_struct, struct_size);
     payload.first = payload_struct;
 
-    size_t vector_size = header.packet_size - kHeaderSize - struct_size;
+    size_t vector_size = packet_size - kHeaderSize - struct_size;
     payload.second.reserve(vector_size);
     dequeue(payload.second.data(), vector_size);
 
