@@ -85,35 +85,40 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "收到的包类型错误，理想=0x00，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
-            VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
+            if(packet.header.packet_type == 0x00) {
+                VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
 
-            std::vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet.header, kHeaderSize);
-            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-            LOG(Level::TP_R) << "从未认证的客户端收到版本认证包，长度=" << recvbuffer.size() << std::endl;
-            LOG(Level::TP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+                std::vector<uint8_t> recvbuffer;
+                recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+                uint8_t *ptr = recvbuffer.data();
+                memcpy(ptr, &packet.header, kHeaderSize);
+                memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
+                recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+                LOG(Level::TP_R) << "从未认证的客户端收到版本认证包，长度=" << recvbuffer.size() << std::endl;
+                LOG(Level::TP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
 
-            packet.header.packet_size = ntohs(packet.header.packet_size);
-            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-            recved_pkt.required_version_main = ntohs(recved_pkt.required_version_main);
-            if (recved_pkt.required_version_main > 0x03) {
-                LERR << "客户端要求的服务端版本高于本服务器的版本，本机大版本=0x03，客户端要求大版本不小于0x" << hex <<  (u_int)recved_pkt.required_version_main << endl;
-                return false;
-            }
-            Packet packet2 = client.recv_buffer.dequeue_packet();
-            if (packet2.header.direction != 0x91) {
-                LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet2.header.direction << endl;
-                return false;
-            }
-            if (packet2.header.packet_type != 0x01) {
-                LERR << "收到的包类型错误，理想=0x01，实际=0x" << hex <<  (u_int)packet2.header.packet_type << endl;
-                return false;
-            }
+                packet.header.packet_size = ntohs(packet.header.packet_size);
+                recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+                recved_pkt.required_version_main = ntohs(recved_pkt.required_version_main);
+                if (recved_pkt.required_version_main > 0x03) {
+                    LERR << "客户端要求的服务端版本高于本服务器的版本，本机大版本=0x03，客户端要求大版本不小于0x" << hex <<  (u_int)recved_pkt.required_version_main << endl;
+                    return false;
+                }
+                Packet packet2 = client.recv_buffer.dequeue_packet();
+                if (packet2.header.direction != 0x91) {
+                    LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet2.header.direction << endl;
+                    return false;
+                }
+                if (packet2.header.packet_type != 0x01) {
+                    LERR << "收到的包类型错误，理想=0x01，实际=0x" << hex <<  (u_int)packet2.header.packet_type << endl;
+                    return false;
+                }
 
-            AuthResponsePacket &recved_pkt2 = *((AuthResponsePacket*)packet2.payload.first);
+                return false;
+            } //end of VersionRequirePacket
+
+            // AuthREsponsePacket
+            AuthResponsePacket &recved_pkt2 = *((AuthResponsePacket*)packet.payload.first);
 
             std::vector<uint8_t> recvbuffer2;
             recvbuffer2.reserve(kHeaderSize + sizeof(recved_pkt2));
@@ -124,7 +129,7 @@ bool PresentationLayer::fsm(Client &client) {
             LOG(Level::TP_R) << "从未认证的客户端收到基本配置包，长度=" << recvbuffer2.size() << std::endl;
             LOG(Level::TP_RD) << "收到内容：" << logify_data(recvbuffer2) << std::endl;            
 
-            packet2.header.packet_size = ntohs(packet2.header.packet_size);
+            packet.header.packet_size = ntohs(packet.header.packet_size);
             recved_pkt2.payload_size = ntohs(recved_pkt2.payload_size);
             recved_pkt2.random_num = ntohl(recved_pkt2.random_num);
             uint8_t* encrypted;
@@ -419,152 +424,97 @@ bool PresentationLayer::fsm(Client &client) {
             return true;
         }
         case SessionState::WaitEtheInfo: {
-            switch(client.ethnum) {
-                case 0x02: {
-                    // recv
-                    Packet packet = client.recv_buffer.dequeue_packet();
-                    if (packet.header.direction != 0x91) {
-                        LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
-                        return false;
-                    }
-                    if (packet.header.packet_type != 0x05) {
-                        LERR << "收到的包类型错误，理想=0x05，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
-                        return false;
-                    }
-                    EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
-
-                    std::vector<uint8_t> recvbuffer;
-                    recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-                    uint8_t *ptr = recvbuffer.data();
-                    memcpy(ptr, &packet.header, kHeaderSize);
-                    memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-                    recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-                    LOG(Level::DP_R) << "从已认证的客户端收到以太网信息包，长度=" << recvbuffer.size() << std::endl;
-                    LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
-
-                    packet.header.packet_size = ntohs(packet.header.packet_size);
-                    recved_pkt.port = ntohs(recved_pkt.port);
-                    recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-                    recved_pkt.options = ntohs(recved_pkt.options);
-                    recved_pkt.addr = ntohl(recved_pkt.addr);
-                    recved_pkt.mask = ntohl(recved_pkt.mask);
-                    recved_pkt.addr_port_1 = ntohl(recved_pkt.addr_port_1);
-                    recved_pkt.mask_port_1 = ntohl(recved_pkt.mask_port_1);
-                    recved_pkt.addr_port_2 = ntohl(recved_pkt.addr_port_2);
-                    recved_pkt.mask_port_2 = ntohl(recved_pkt.mask_port_2);
-                    recved_pkt.addr_port_3 = ntohl(recved_pkt.addr_port_3);
-                    recved_pkt.mask_port_3 = ntohl(recved_pkt.mask_port_3);
-                    recved_pkt.addr_port_4 = ntohl(recved_pkt.addr_port_4);
-                    recved_pkt.mask_port_4 = ntohl(recved_pkt.mask_port_4);
-                    recved_pkt.addr_port_5 = ntohl(recved_pkt.addr_port_5);
-                    recved_pkt.mask_port_5 = ntohl(recved_pkt.mask_port_5);
-                    recved_pkt.send_bytes = ntohl(recved_pkt.send_bytes);
-                    recved_pkt.send_packets = ntohl(recved_pkt.send_packets);
-                    recved_pkt.send_errs = ntohl(recved_pkt.send_errs);
-                    recved_pkt.send_drop = ntohl(recved_pkt.send_drop);
-                    recved_pkt.send_fifo = ntohl(recved_pkt.send_fifo);
-                    recved_pkt.send_frame = ntohl(recved_pkt.send_frame);
-                    recved_pkt.send_compressed = ntohl(recved_pkt.send_compressed);
-                    recved_pkt.send_multicast = ntohl(recved_pkt.send_multicast);
-                    recved_pkt.recv_bytes = ntohl(recved_pkt.recv_bytes);
-                    recved_pkt.recv_packets = ntohl(recved_pkt.recv_packets);
-                    recved_pkt.recv_errs = ntohl(recved_pkt.recv_errs);
-                    recved_pkt.recv_drop = ntohl(recved_pkt.recv_drop);
-                    recved_pkt.recv_fifo = ntohl(recved_pkt.recv_fifo);
-                    recved_pkt.recv_frame = ntohl(recved_pkt.recv_frame);
-                    recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
-                    recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
-
-                    if(DatabaseConnection::get_instance()->OnRecvEtherInfoResponse(packet, client) == false) return false;
-                    // No break
-                }
-                case 0x01: {
-                    // recv
-                    Packet packet = client.recv_buffer.dequeue_packet();
-                    if (packet.header.direction != 0x91) {
-                        LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
-                        return false;
-                    }
-                    if (packet.header.packet_type != 0x05) {
-                        LERR << "收到的包类型错误，理想=0x05，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
-                        return false;
-                    }
-                    EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
-
-                    std::vector<uint8_t> recvbuffer;
-                    recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-                    uint8_t *ptr = recvbuffer.data();
-                    memcpy(ptr, &packet.header, kHeaderSize);
-                    memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-                    recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-                    LOG(Level::DP_R) << "从已认证的客户端收到以太网信息包，长度=" << recvbuffer.size() << std::endl;
-                    LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
-
-                    packet.header.packet_size = ntohs(packet.header.packet_size);
-                    recved_pkt.port = ntohs(recved_pkt.port);
-                    recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-                    recved_pkt.options = ntohs(recved_pkt.options);
-                    recved_pkt.addr = ntohl(recved_pkt.addr);
-                    recved_pkt.mask = ntohl(recved_pkt.mask);
-                    recved_pkt.addr_port_1 = ntohl(recved_pkt.addr_port_1);
-                    recved_pkt.mask_port_1 = ntohl(recved_pkt.mask_port_1);
-                    recved_pkt.addr_port_2 = ntohl(recved_pkt.addr_port_2);
-                    recved_pkt.mask_port_2 = ntohl(recved_pkt.mask_port_2);
-                    recved_pkt.addr_port_3 = ntohl(recved_pkt.addr_port_3);
-                    recved_pkt.mask_port_3 = ntohl(recved_pkt.mask_port_3);
-                    recved_pkt.addr_port_4 = ntohl(recved_pkt.addr_port_4);
-                    recved_pkt.mask_port_4 = ntohl(recved_pkt.mask_port_4);
-                    recved_pkt.addr_port_5 = ntohl(recved_pkt.addr_port_5);
-                    recved_pkt.mask_port_5 = ntohl(recved_pkt.mask_port_5);
-                    recved_pkt.send_bytes = ntohl(recved_pkt.send_bytes);
-                    recved_pkt.send_packets = ntohl(recved_pkt.send_packets);
-                    recved_pkt.send_errs = ntohl(recved_pkt.send_errs);
-                    recved_pkt.send_drop = ntohl(recved_pkt.send_drop);
-                    recved_pkt.send_fifo = ntohl(recved_pkt.send_fifo);
-                    recved_pkt.send_frame = ntohl(recved_pkt.send_frame);
-                    recved_pkt.send_compressed = ntohl(recved_pkt.send_compressed);
-                    recved_pkt.send_multicast = ntohl(recved_pkt.send_multicast);
-                    recved_pkt.recv_bytes = ntohl(recved_pkt.recv_bytes);
-                    recved_pkt.recv_packets = ntohl(recved_pkt.recv_packets);
-                    recved_pkt.recv_errs = ntohl(recved_pkt.recv_errs);
-                    recved_pkt.recv_drop = ntohl(recved_pkt.recv_drop);
-                    recved_pkt.recv_fifo = ntohl(recved_pkt.recv_fifo);
-                    recved_pkt.recv_frame = ntohl(recved_pkt.recv_frame);
-                    recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
-                    recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
-
-                    if(DatabaseConnection::get_instance()->OnRecvEtherInfoResponse(packet, client) == false) return false;
-
-                    // ------------------------------------------- send TTYInfo Packet ---------------------------------
-                    // construct message
-                    // header
-                    PacketHeader header;
-                    // packet_type: hton
-                    header.direction = 0x11;
-                    header.packet_type = 0x09;
-                    header.packet_size = htons(8);
-        
-                    // packet struct
-                    TerInfoRequestPacket pkt;
-                    pkt.payload_size = 0;
-
-                    vector<uint8_t> temp_vec;
-                    for(int i = 0; i < kHeaderSize; i++) {
-                        temp_vec.push_back(((uint8_t*)&header)[i]);
-                    }
-                    for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
-                        temp_vec.push_back(((uint8_t*)&pkt)[i]);
-                    }
-
-                    LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
-                    LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
-                    client.send_buffer.push(temp_vec);
-
-                    client.state = SessionState::WaitTermInfo;
-
-                    break;
-                }
+            // recv
+            Packet packet = client.recv_buffer.dequeue_packet();
+            if (packet.header.direction != 0x91) {
+                LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
+                return false;
             }
+            if (packet.header.packet_type != 0x05) {
+                LERR << "收到的包类型错误，理想=0x05，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
+                return false;
+            }
+            EtherInfoResponsePacket &recved_pkt = *((EtherInfoResponsePacket*)packet.payload.first);
+
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet.header, kHeaderSize);
+            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+            LOG(Level::DP_R) << "从已认证的客户端收到以太网信息包，长度=" << recvbuffer.size() << std::endl;
+            LOG(Level::DP_RD) << "收到内容：" << logify_data(recvbuffer) << std::endl;            
+
+            packet.header.packet_size = ntohs(packet.header.packet_size);
+            recved_pkt.port = ntohs(recved_pkt.port);
+            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+            recved_pkt.options = ntohs(recved_pkt.options);
+            recved_pkt.addr = ntohl(recved_pkt.addr);
+            recved_pkt.mask = ntohl(recved_pkt.mask);
+            recved_pkt.addr_port_1 = ntohl(recved_pkt.addr_port_1);
+            recved_pkt.mask_port_1 = ntohl(recved_pkt.mask_port_1);
+            recved_pkt.addr_port_2 = ntohl(recved_pkt.addr_port_2);
+            recved_pkt.mask_port_2 = ntohl(recved_pkt.mask_port_2);
+            recved_pkt.addr_port_3 = ntohl(recved_pkt.addr_port_3);
+            recved_pkt.mask_port_3 = ntohl(recved_pkt.mask_port_3);
+            recved_pkt.addr_port_4 = ntohl(recved_pkt.addr_port_4);
+            recved_pkt.mask_port_4 = ntohl(recved_pkt.mask_port_4);
+            recved_pkt.addr_port_5 = ntohl(recved_pkt.addr_port_5);
+            recved_pkt.mask_port_5 = ntohl(recved_pkt.mask_port_5);
+            recved_pkt.send_bytes = ntohl(recved_pkt.send_bytes);
+            recved_pkt.send_packets = ntohl(recved_pkt.send_packets);
+            recved_pkt.send_errs = ntohl(recved_pkt.send_errs);
+            recved_pkt.send_drop = ntohl(recved_pkt.send_drop);
+            recved_pkt.send_fifo = ntohl(recved_pkt.send_fifo);
+            recved_pkt.send_frame = ntohl(recved_pkt.send_frame);
+            recved_pkt.send_compressed = ntohl(recved_pkt.send_compressed);
+            recved_pkt.send_multicast = ntohl(recved_pkt.send_multicast);
+            recved_pkt.recv_bytes = ntohl(recved_pkt.recv_bytes);
+            recved_pkt.recv_packets = ntohl(recved_pkt.recv_packets);
+            recved_pkt.recv_errs = ntohl(recved_pkt.recv_errs);
+            recved_pkt.recv_drop = ntohl(recved_pkt.recv_drop);
+            recved_pkt.recv_fifo = ntohl(recved_pkt.recv_fifo);
+            recved_pkt.recv_frame = ntohl(recved_pkt.recv_frame);
+            recved_pkt.recv_compressed = ntohl(recved_pkt.recv_compressed);
+            recved_pkt.recv_multicast = ntohl(recved_pkt.recv_multicast);
+
+            if(DatabaseConnection::get_instance()->OnRecvEtherInfoResponse(packet, client) == false) return false;
+            
+            client.ethnum --;
+            if(client.ethnum > 0) {
+                client.state = SessionState::WaitEtheInfo;
+                return true;
+            }
+            // ------------------------------------------- send TTYInfo Packet ---------------------------------
+            // construct message
+            // header
+            PacketHeader header;
+            // packet_type: hton
+            header.direction = 0x11;
+            header.packet_type = 0x09;
+            header.packet_size = htons(8);
+
+            // packet struct
+            TerInfoRequestPacket pkt;
+            pkt.payload_size = 0;
+
+            vector<uint8_t> temp_vec;
+            for(int i = 0; i < kHeaderSize; i++) {
+                temp_vec.push_back(((uint8_t*)&header)[i]);
+            }
+            for(int i = 0; i < sizeof(AuthRequestPacket); i++) {
+                temp_vec.push_back(((uint8_t*)&pkt)[i]);
+            }
+
+            LOG(Level::DP_S) << "[deptid:" << client.devid << "]" << "向已认证的客户端发送终端服务信息请求包，长度=" << temp_vec.size() << std::endl;
+            LOG(Level::DP_SD) << "[deptid:" << client.devid << "]" << "发送内容：" << logify_data(temp_vec) << std::endl;
+            client.send_buffer.push(temp_vec);
+
+            client.state = SessionState::WaitTermInfo;
+
+            break;
+                // }
+            // }
         }
         case SessionState::WaitTermInfo: {
             // recv
