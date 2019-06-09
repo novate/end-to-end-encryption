@@ -121,7 +121,7 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 
 	cout << endl << command.str() << endl << endl;
 
-	result = MysqlExecCommand(command.str());
+	result = MysqlExecCommand("insert into devstate_base (devstate_base_devid, devstate_base_devno, devstate_base_time, devstate_base_ipaddr, devstate_base_sid, devstate_base_type , devstate_base_version, devstate_base_cpu, devstate_base_sdram, devstate_base_flash, devstate_base_ethnum, devstate_base_syncnum, devstate_base_asyncnum, devstate_base_switchnum, devstate_base_usbnum, devstate_base_prnnum, devstate_base_cpu_used, devstate_base_sdram_used, devstate_base_tty_configed, devstate_base_tty_connected) values ('155171301', '1', now(), '192.168.1.244', 'YIKE-PSBC47589', 'iTS500', '10.00A', 533, 64, 16, 2, 0, 0, 0, '0', '0', 0, 0, 0, 0)");
 	if(result == NULL) {
 		LERR << "验证包写入数据库失败" << endl;
 		LDB << "验证包写入数据库失败" << endl;
