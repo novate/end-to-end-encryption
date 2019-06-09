@@ -53,7 +53,7 @@ struct Packet {
 };
 
 enum class PacketType: uint8_t {
-	NullPacket = 0xf0,
+		// NullPacket = 0xf0,
     VersionRequire = 0x00,
 
     AuthRequest = 0x01,
@@ -71,10 +71,10 @@ enum class PacketType: uint8_t {
     EtherInfoRequest = 0x05,
     EtherInfoResponse = 0x05,
 
-    USBInfoRequest = 0x07,
-    USBInfoResponse = 0x07,
-    USBfileRequest = 0x0C,
-    USBfileResponse = 0x0C,
+    USBStateRequest = 0x07,
+    USBStateResponse = 0x07,
+    USBInfoRequest = 0x0C,
+    USBInfoResponse = 0x0C,
 
     PrintDevRequest = 0x08,
     PrintDevResponse = 0x08,
@@ -87,7 +87,7 @@ enum class PacketType: uint8_t {
     DumbTerResponse = 0x0A,
     IPTermRequest = 0x0B,
     IPTermResponse = 0x0B,
-		End_all = 0x0C,
+
     End = 0xFF
 };
 
@@ -215,6 +215,52 @@ struct EtherInfoResponsePacket {
     uint32_t recv_frame;
     uint32_t recv_compressed;
     uint32_t recv_multicast;
+};
+
+struct USBStateRequestPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
+struct USBStateResponsePacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+    uint8_t usb_is_inserted;
+		uint8_t pad_2[3];
+};
+
+struct USBInfoRequestPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
+struct USBInfoResponsePacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
+struct PrintDevRequestPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
+struct PrintDevResponsePacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+    uint8_t print_is_usable;
+		uint8_t pad_2;
+		uint16_t cnt_of_server;
+		uint8_t printer_name[32];
+};
+
+struct PrintQueueRequestPacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
+};
+
+struct PrintQueueResponsePacket {
+    uint8_t pad_1[2];
+    uint16_t payload_size;
 };
 
 struct TerInfoRequestPacket {

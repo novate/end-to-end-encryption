@@ -213,8 +213,8 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, const Client &cl
 	command << std::dec;
 	command << "devstate_base_eth" << ethernet_num << "_state = " << (packet_struct.state == 0x0001 ? "'UP'" : "'DOWN'") << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_speed = " << ((packet_struct.options & 0x0001) == 0x0001 ? "'100MB'" : "'10MB'") << ", ";
-	command << "devstate_base_eth" << ethernet_num << "_duplex = " << ((packet_struct.options & 0x0002) == 0x0002 ? "'å…¨åŒå·¥'" : "'åŠåŒå·¥'") << ", ";
-	command << "devstate_base_eth" << ethernet_num << "_autonego = " << ((packet_struct.options & 0x0004) == 0x0004 ? "'æ˜¯'" : "'å¦'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_duplex = " << ((packet_struct.options & 0x0002) == 0x0002 ? "'È«Ë«¹¤'" : "'°ëË«¹¤'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_autonego = " << ((packet_struct.options & 0x0004) == 0x0004 ? "'ÊÇ'" : "'·ñ'") << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_txbytes = " << to_string(packet_struct.send_bytes) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_rxbytes = " << to_string(packet_struct.recv_bytes) << ", ";
@@ -322,6 +322,74 @@ bool DatabaseConnection::UpdateTTYConnected(const Client &client) {
 	std::stringstream command;
 
 	command << "update devstate_base set devstate_base_tty_connected = " << to_string(client.tty_connected);
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvUsbStateResponse(Packet packet, const Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	USBStateResponsePacket &packet_struct = *((USBStateResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+	command << "update devstate_base set devstate_base_usbstate = '";
+	command << (packet_struct.usb_is_inserted == 1 ? "ÒÑ²åÈë" : "Î´²åÈë") << "'";
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvUsbInfoResponse(Packet packet, const Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	// ProcInfoResponsePacket &packet_struct = *((ProcInfoResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+	command << "update devstate_base set devstate_base_usbfiles = '";
+	command << packet.payload.second.data() << "'";
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvPrintDevResponse(Packet packet, const Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	PrintDevResponsePacket &packet_struct = *((PrintDevResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+	command << "update devstate_base set devstate_base_prnname = '";
+	std::string s(packet_struct.printer_name, packet_struct.printer_name+32);
+	command << s << "'";
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+	command << "update devstate_base set devstate_base_prnstate = '";
+	command << (packet_struct.print_is_usable == 1 ? "ÒÑÆô¶¯" : "Î´Æô¶¯") << "'";
+	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
+
+	result = MysqlExecCommand(command.str());
+	if(result == NULL) return false;
+	else return true;
+}
+
+bool DatabaseConnection::OnRecvPrintQueueResponse(Packet packet, const Client &client) {
+	// sql result handler
+	MYSQL_RES *result;
+
+	// ProcInfoResponsePacket &packet_struct = *((ProcInfoResponsePacket*)packet.payload.first);
+
+	std::stringstream command;
+	command << "update devstate_base set devstate_base_prnfiles = '";
+	command << packet.payload.second.data() << "'";
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
 	result = MysqlExecCommand(command.str());
