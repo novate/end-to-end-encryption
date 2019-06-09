@@ -94,6 +94,13 @@ bool PresentationLayer::fsm(Client &client) {
                 return false;
             }
 
+            std::vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+            uint8_t *ptr = recvbuffer.data();
+            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
+
+
             Packet packet2 = client.recv_buffer.dequeue_packet();
             if (packet2.header.direction != 0x91) {
                 LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet2.header.direction << endl;
