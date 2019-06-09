@@ -85,7 +85,7 @@ void TransferLayer::select_loop(int listener) {
                     if (FD_ISSET(el.socket_fd, &read_fds)) {
                         if (try_recv(el) == StatusCode::OK && el.recv_buffer.size() >= el.recv_buffer.current_packet_size()) {
                             // LOG(Level::Debug) << "Info buffer " << el.recv_buffer.size() << endl;
-                            // LOG(Level::Debug) << "SHould be username " << el.recv_buffer.data + 3 << endl;
+                            // LOG(Level::Debug) << "Should be username " << el.recv_buffer.data + 3 << endl;
                             if(PreLayerInstance.fsm(el) == false) {
                                 remove_client(el);
                             }

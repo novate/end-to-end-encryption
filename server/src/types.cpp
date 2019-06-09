@@ -1,6 +1,7 @@
 #include "../include/types.hpp"
 
 using namespace std;
+using namespace fly;
 
 CircularQueue::CircularQueue(size_t init_size) {
     _size = init_size;
@@ -154,20 +155,25 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
 }
 
 /////////////////////////// Client /////////////////////////////
-int Client::send_msg(vector<pair<uint8_t*, size_t>> buffer) {
+int Client::send_msg(vector<pair<uint8_t*, size_t>> buffer, bool is_authorized) {
     for (const auto &pr : buffer) {
         // pr.first: data; pr.second: size;
         int n;
         if ((n = send(socket_fd, pr.first, pr.second, 0)) == -1) {
-            // LOG(Level::ERR) << "send head return error!" << endl;
+            LERR << "服务器发送信息失败" << endl;
             return false;
         } else if (n == 0) {
-            // LOG(Level::ENV) << "remote server has closed connection." << endl;
+            LENV << "客户端中断了连接，socket=" << socket_fd << endl;
             return false;
         } else {
-            // LOG(Level::ERR) << "sent incorrect head length! Expected: 8 "
-                // << "sent: " << n << endl;
-            return false;
+            if (is_authorized) {
+                LOG(Level::DP_S) << "服务器发送信息成功，长度=" << n << endl;
+                LOG(Level::DP_SD) << "发送内容：" << logify_data(pr.first, pr.second) << endl;
+            }
+            else {
+                LOG(Level::TP_S) << "服务器发送信息成功，长度=" << n << endl;
+                LOG(Level::TP_SD) << "发送内容：" << logify_data(pr.first, pr.second) << endl;
+            }
         }
     }
     return true;

@@ -308,7 +308,7 @@ private:
 public:
     CircularQueue recv_buffer;
     std::queue< std::vector<uint8_t> > send_buffer;
-	int send_msg(std::vector<std::pair<uint8_t*, size_t>> buffer);
+		int send_msg(std::vector<std::pair<uint8_t*, size_t>> buffer, bool is_authorized=true);
 
     int socket_fd;
     PacketType RecvPacketType = PacketType::NullPacket;
