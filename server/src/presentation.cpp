@@ -95,7 +95,8 @@ bool PresentationLayer::fsm(Client &client) {
             std::vector<uint8_t> recvbuffer;
             recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
             uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet, sizeof(uint8_t)*(kHeaderSize + sizeof(recved_pkt)));
+            memcpy(ptr, &packet.header, kHeaderSize);
+            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
             recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
 
 
@@ -581,12 +582,21 @@ bool PresentationLayer::fsm(Client &client) {
             if(DatabaseConnection::get_instance()->OnRecvIPTermResponse(packet, client) == false) return false;
             client.tty_cnt++;
             client.scr_num = (int)recved_pkt.screen_num;
-            if(recved_pkt.screen_num != 0x00) client.state = SessionState::WaitScrInfo;
+            if(recved_pkt.screen_num != 0x00) {
+                memcpy(&client.current_ipterm, &packet.header, kHeaderSize);
+                memcpy(&client.current_ipterm.payload.first, &packet.payload.first, sizeof(recved_pkt));
+                client.state = SessionState::WaitScrInfo;
+            }
 
             return true;
         }
 
         case SessionState::WaitScrInfo: {
+            vector<uint8_t> recvbuffer;
+            recvbuffer.reserve(kHeaderSize + sizeof(IPTermResponsePacket));
+            memcpy(recvbuffer.data(), &client.current_ipterm.header, kHeaderSize);
+            memcpy(recvbuffer.data() + kHeaderSize, &client.current_ipterm.payload.first, sizeof(IPTermResponsePacket));
+
             for(int i = 0; i < client.scr_num; i++) {
                 // recv
                 Packet packet = client.recv_buffer.dequeue_packet(true);
@@ -605,7 +615,11 @@ bool PresentationLayer::fsm(Client &client) {
 
                 if(DatabaseConnection::get_instance()->OnRecvScreenInfoPacket(packet, client) == false) return false;
 
+                memcpy(&recvbuffer[recvbuffer.size()], &packet.payload.first, sizeof(ScreenInfoPacket));
             }
+
+            // use here
+
             if(client.tty_cnt == client.tty_connected)  {
                 // construct message
                 // header
