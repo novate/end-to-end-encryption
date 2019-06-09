@@ -81,26 +81,28 @@ bool PresentationLayer::fsm(Client &client) {
                 LERR << "收到的文件头错误，理想=0x91，实际=0x" << hex <<  (u_int)packet.header.direction << endl;
                 return false;
             }
-            if (packet.header.packet_type != 0x00) {
+            if (packet.header.packet_type != 0x00 || packet.header.packet_type != 0x01) {
                 LERR << "收到的包类型错误，理想=0x00，实际=0x" << hex <<  (u_int)packet.header.packet_type << endl;
                 return false;
             }
-            VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
-            packet.header.packet_size = ntohs(packet.header.packet_size);
-            recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
-            recved_pkt.required_version_main = ntohs(recved_pkt.required_version_main);
-            if (recved_pkt.required_version_main > 0x03) {
-                LERR << "客户端要求的服务端版本高于本服务器的版本，本机大版本=0x03，客户端要求大版本不小于0x" << hex <<  (u_int)recved_pkt.required_version_main << endl;
-                return false;
+
+            if(packet.header.packet_type == 0x00) {
+                VersionRequirePacket &recved_pkt = *((VersionRequirePacket*)packet.payload.first);
+                packet.header.packet_size = ntohs(packet.header.packet_size);
+                recved_pkt.payload_size = ntohs(recved_pkt.payload_size);
+                recved_pkt.required_version_main = ntohs(recved_pkt.required_version_main);
+                if (recved_pkt.required_version_main > 0x03) {
+                    LERR << "客户端要求的服务端版本高于本服务器的版本，本机大版本=0x03，客户端要求大版本不小于0x" << hex <<  (u_int)recved_pkt.required_version_main << endl;
+                    return false;
+                }
+
+                std::vector<uint8_t> recvbuffer;
+                recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
+                uint8_t *ptr = recvbuffer.data();
+                memcpy(ptr, &packet.header, kHeaderSize);
+                memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
+                recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
             }
-
-            std::vector<uint8_t> recvbuffer;
-            recvbuffer.reserve(kHeaderSize + sizeof(recved_pkt));
-            uint8_t *ptr = recvbuffer.data();
-            memcpy(ptr, &packet.header, kHeaderSize);
-            memcpy(ptr + kHeaderSize, &packet.payload.first, sizeof(recved_pkt));
-            recvbuffer.insert(recvbuffer.end(), packet.payload.second.begin(), packet.payload.second.end());
-
 
             Packet packet2 = client.recv_buffer.dequeue_packet();
             if (packet2.header.direction != 0x91) {
