@@ -52,7 +52,7 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.svr_time = htonl(svr_time);
 
             for(int i =0; i < packet_size; i++) {
-                client.send_buffer;
+                client.send_buffer.push()
             }
             // vector<pair<uint8_t*, size_t>> buffer { 
             //     make_pair((uint8_t*)&header, sizeof(header)), 
