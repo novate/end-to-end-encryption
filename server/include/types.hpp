@@ -394,7 +394,8 @@ public:
   uint8_t current_scr;
   uint8_t ether_last=0; // ether包的倒计时器
 	uint8_t dumb_term[16];
-  uint8_t ip_term[254];
+    uint8_t ip_term[254];
+	Packet current_ipterm;
 };
 
 const u_char kSecret[4096]={
