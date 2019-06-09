@@ -296,6 +296,22 @@ private:
     size_t front, rear;
 };
 
+enum class SessionState: uint8_t {
+	Acceptance = 0x00,
+	WaitAuth = 0x01,
+	WaitSysInfo = 0x02,
+	WaitConfigInfo = 0x03,
+	WaitProcInfo = 0x04,
+	WaitEtheInfo = 0x05,
+	WaitUsbInfo = 0x06,
+	WaitUsbFile = 0x07,
+	WaitPrnInfo = 0x08,
+	WaitPrnQueue = 0x09,
+	WaitTermInfo = 0x0a,
+	WaitDumpTermInfo = 0x0b,
+	WaitIPTermInfo = 0x0c,
+};
+
 struct Client {
     Client(int socket_fd, size_t buffer_size) :
         socket_fd(socket_fd),
@@ -308,11 +324,14 @@ private:
 public:
     CircularQueue recv_buffer;
     std::queue< std::vector<uint8_t> > send_buffer;
-		int send_msg(std::vector<std::pair<uint8_t*, size_t>> buffer, bool is_authorized=true);
+	// int send_msg(std::vector<std::pair<uint8_t*, size_t>> buffer, bool is_authorized=true);
 
     int socket_fd;
-    PacketType RecvPacketType = PacketType::NullPacket;
-    PacketType SendPacketType;
+    // PacketType RecvPacketType = PacketType::NullPacket;
+    // PacketType SendPacketType;
+
+	SessionState state = SessionState::Acceptance;
+
     std::string ipaddr;
     // primary key of devstate_base table
     std::string devid;
@@ -325,9 +344,9 @@ public:
     uint16_t current_tty;
     uint8_t current_scr;
     uint8_t ether_last=0; // ether包的倒计时器
-		uint8_t dumb_term[16];
+	uint8_t dumb_term[16];
     uint8_t ip_term[254];
-		uint16_t term_num;
+	uint16_t term_num;
 };
 
 const u_char kSecret[4096]={

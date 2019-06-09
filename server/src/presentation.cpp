@@ -1,6 +1,7 @@
 #include "../include/presentation.hpp"
 
 extern TransferLayer TransLayerInstance;
+extern Options opt;
 
 using namespace std;
 using namespace fly;
@@ -14,39 +15,11 @@ PresentationLayer::PresentationLayer()
         return;
 }
 
-
 bool PresentationLayer::fsm(Client &client) { 
     // send
-    switch (client.RecvPacketType) {
+    switch (client.state) {
         // first message
-        case PacketType::NullPacket: {
-            // Read config
-            ifstream ifs(kFnConfServer);
-            if (!ifs.is_open()) {
-                cout << "找不到该配置文件：" << kFnConfServer << endl;
-                cout << "请将该配置文件和本可执行文件置于同一个目录下" << endl;
-                return -1;
-            }
-            Options opt = parse_arguments(ifs);
-
-            bool log_env[4][4];
-            string s_tp = opt.at("tmp_packet");
-            string s_ts = opt.at("tmp_socket");
-            string s_dp = opt.at("dev_packet");
-            string s_ds = opt.at("dev_socket");
-            for (u_int i = 0; i < 4; i++) {
-                log_env[0][i] = (s_tp[i] == '1');
-            }
-            for (u_int i = 0; i < 4; i++) {
-                log_env[1][i] = (s_ts[i] == '1');
-            }
-            for (u_int i = 0; i < 4; i++) {
-                log_env[2][i] = (s_dp[i] == '1');
-            }
-            for (u_int i = 0; i < 4; i++) {
-                log_env[3][i] = (s_ds[i] == '1');
-            }
-
+        case SessionState::Acceptance: {
             // first message
             // construct message
             // header
@@ -67,6 +40,8 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.time_gap_fail = htons((unsigned short)stoi(opt.at("设备连接间隔")));
             pkt.time_gap_succeed = htons((unsigned short)stoi(opt.at("设备采样间隔")));
             pkt.is_empty_tty = 0x1;
+
+            // ------------------------------------------------Generateing Encryption String -----------------
             u_int random_num=0, svr_time=0;
             uint8_t auth_str[33] = "yzmond:id*str&to!tongji@by#Auth^";
             encrypt_auth(random_num, svr_time, auth_str, 32);
@@ -76,11 +51,14 @@ bool PresentationLayer::fsm(Client &client) {
             pkt.random_num = htonl(random_num);
             pkt.svr_time = htonl(svr_time);
 
-            vector<pair<uint8_t*, size_t>> buffer { 
-                make_pair((uint8_t*)&header, sizeof(header)), 
-                make_pair((uint8_t*)&pkt, sizeof(pkt)) 
-            };
-            client.send_msg(buffer);
+            for(int i =0; i < packet_size; i++) {
+                client.send_buffer;
+            }
+            // vector<pair<uint8_t*, size_t>> buffer { 
+            //     make_pair((uint8_t*)&header, sizeof(header)), 
+            //     make_pair((uint8_t*)&pkt, sizeof(pkt)) 
+            // };
+            // client.send_msg(buffer);
 
             // recv
             Packet packet = client.recv_buffer.dequeue_packet();

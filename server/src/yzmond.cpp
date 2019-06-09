@@ -5,6 +5,8 @@ using namespace fly;
 PresentationLayer PreLayerInstance;
 TransferLayer TransLayerInstance;
 
+Options opt;
+
 void output(queue<vector <uint8_t> > &test)
 {
     while(!test.empty()) {
@@ -56,7 +58,7 @@ int main()
         cout << "请将该配置文件和本可执行文件置于同一个目录下" << endl;
         return -1;
     }
-    Options opt = parse_arguments(ifs);
+    // Options opt = parse_arguments(ifs);
 
     bool log_env[4][4];
     string s_tp = opt.at("tmp_packet");
