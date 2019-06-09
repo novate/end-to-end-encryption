@@ -81,27 +81,27 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
     PacketHeader header;
     size_t struct_size; // TODO
     uint8_t* payload_struct;
-    cout << "Bad 1" << endl;
+    // cout << "Bad 1" << endl;
     if(is_scr == true) {
         struct_size = sizeof(ScreenInfoPacket);
         dequeue(payload_struct, struct_size);
         payload.first = payload_struct;
-        cout << "Bad 2" << endl;
+        // cout << "Bad 2" << endl;
 
         size_t vector_size = header.packet_size - struct_size;
         payload.second.reserve(vector_size);
         dequeue(payload.second.data(), vector_size);
-        cout << "Bad 3" << endl;
+        // cout << "Bad 3" << endl;
 
         Packet packet { header, payload };
         return packet;
     }
-    cout << "Bad 4" << endl;
+    // cout << "Bad 4" << endl;
 
     // get rid of the header from the buffer
     dequeue((uint8_t*)&header, kHeaderSize); // the bit ordering of the 2-3 bytes doesn't really matter
 
-    cout << "Bad 4" << endl;
+    // cout << "Bad 4" << endl;
 
     switch((PacketType)header.packet_type) {
         case PacketType::AuthResponse: {
@@ -157,7 +157,7 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
     // }
     dequeue(payload_struct, struct_size);
 
-    cout << "Bad 5" << endl;
+    // cout << "Bad 5" << endl;
 
     payload.first = payload_struct;
 
@@ -166,10 +166,10 @@ Packet CircularQueue::dequeue_packet(bool is_scr) {
     cout << "packet_size: " << packet_size << " kHeaderSize: " << kHeaderSize << " struct_size " <<  struct_size << " vector_size " << vector_size << endl;
     payload.second.reserve(vector_size);
 
-    cout << "Bad 6" << endl;
+    // cout << "Bad 6" << endl;
     dequeue(payload.second.data(), vector_size);
 
-    cout << "Bad 7" << endl;
+    // cout << "Bad 7" << endl;
 
     Packet packet { header, payload };
     return packet;

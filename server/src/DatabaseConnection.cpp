@@ -75,7 +75,7 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	std::stringstream command;
 	command << "insert into devstate_base (devstate_base_devid, devstate_base_devno, devstate_base_time, devstate_base_ipaddr, devstate_base_sid, "
 	 << "devstate_base_type , devstate_base_version, devstate_base_cpu, devstate_base_sdram, devstate_base_flash, devstate_base_ethnum, devstate_base_syncnum, "
-	 << "devstate_base_asyncnum, devstate_base_switchnum, devstate_base_usbnum, devstate_base_prnnum) values ("; 
+	 << "devstate_base_asyncnum, devstate_base_switchnum, devstate_base_usbnum, devstate_base_prnnum, devstate_base_cpu_used, devstate_base_sdram_used, devstate_base_tty_configed, devstate_base_tty_connected) values ("; 
 
 	// devid
 	command << "'" << to_string(packet_struct.devid) << "', ";
@@ -91,35 +91,35 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
 	command << "'" << group_serial << to_string(packet_struct.internal_serial) << "', ";
 	// type
-	std::string internal_serial(packet_struct.device_type, packet_struct.device_type + 16);
-	command << "'" << internal_serial << "', ";
+	std::string device_type(packet_struct.device_type, packet_struct.device_type + 16);
+	command << "'" << device_type << "', ";
 	// version
 	std::string software_version(packet_struct.software_verison, packet_struct.software_verison + 16);
 	command << "'" << software_version << "', ";
 	// cpu
-	command << "'" << to_string(packet_struct.cpu_frequence) << "', ";
+	command << to_string(packet_struct.cpu_frequence) << ", ";
 	// sdram
-	command << "'" << to_string(packet_struct.ram) << "', ";
+	command << to_string(packet_struct.ram) << ", ";
 	client->ram = packet_struct.ram;
 	// flash
-	command << "'" << to_string(packet_struct.flash) << ", ";
+	command << to_string(packet_struct.flash) << ", ";
 	// ethnum
-	command << "'" << to_string(packet_struct.ethnum) << ", ";
+	command << to_string(packet_struct.ethnum) << ", ";
 	client->ethnum = packet_struct.ethnum;
 	// syncnum
-	command << "'" << to_string(packet_struct.syncnum) << ", ";
+	command << to_string(packet_struct.syncnum) << ", ";
 	// asyncnum
-	command << "'" << to_string(packet_struct.asyncnum) << ", ";
+	command << to_string(packet_struct.asyncnum) << ", ";
 	// switchnum
-	command << "'" << to_string(packet_struct.switchnum) << ", ";
+	command << to_string(packet_struct.switchnum) << ", ";
 	// usbnum
-	command << "'" << to_string(packet_struct.usbnum) << ", ";
+	command << "'" << to_string(packet_struct.usbnum) << "', ";
 	client->usbnum = packet_struct.usbnum;
 	// prnnum
-	command << "'" << to_string(packet_struct.prnnum) << ")";
+	command << "'" << to_string(packet_struct.prnnum) << "', 0, 0, 0, 0)";
 	client->prnnum = packet_struct.prnnum;
 
-	cout << command.c_str() << endl;
+	cout << endl << command.str() << endl << endl;
 
 	result = MysqlExecCommand(command.str());
 	if(result == NULL) {
