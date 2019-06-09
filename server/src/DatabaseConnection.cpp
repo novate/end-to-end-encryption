@@ -1,8 +1,8 @@
 #include "../include/DatabaseConnection.hpp"
 
-const char* kDatabaseName = "yzmon_1551713";
-const char* kDatabaseUserId= "dbuser_1551713";
-const char* kDatabasePassword= "yzmond.1551713";
+const char* kDatabaseName = "yzmon_1652289";
+const char* kDatabaseUserId= "dbuser_1652289";
+const char* kDatabasePassword= "yzmond.1652289";
 
 extern Options opt;
 int global_number = 0;
@@ -96,19 +96,13 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	command << "'" << client->ipaddr << "', ";
 	// sid
 	// std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
-	command << "'YIKE-PSBC-47589', ";
-	// cout << "group_serial " << group_serial << endl;
-	// std::string group_serial(packet_struct.group_serial, packet_struct.group_serial + 16);
-	// command << "'" << group_serial << "-" << to_string(packet_struct.internal_serial) << "', ";
-	// cout << "group_serial " << group_serial << endl;
+	command << "'" << packet_struct.group_serial << to_string(packet_struct.internal_serial) << "', ";
 	// type
 	// std::string device_type(packet_struct.device_type, packet_struct.device_type + 16);
-	// command << "'" << device_type << "', ";
-	command << "'iTS500', ";
+	command << "'" << packet_struct.device_type << "', ";
 	// version
 	// std::string software_version(packet_struct.software_verison, packet_struct.software_verison + 16);
-	// command << "'" << software_version << "', ";
-	command << "'10.00A', ";
+	command << "'" << packet_struct.software_verison << "', ";
 	// cpu
 	command << to_string(packet_struct.cpu_frequence) << ", ";
 	// sdram
@@ -132,6 +126,8 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	command << "'" << to_string(packet_struct.prnnum) << "', 0, 0, 0, 0);\n";
 	client->prnnum = packet_struct.prnnum;
 
+	string temp = command.str();
+	cout << temp << endl;
 	result = MysqlExecCommand(command.str());
 
 	delete (AuthResponsePacket*)packet.payload.first;
