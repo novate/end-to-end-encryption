@@ -1,8 +1,8 @@
 #include "../include/DatabaseConnection.hpp"
 
-const char* kDatabaseName = "yzmon_1652289";
-const char* kDatabaseUserId= "dbuser_1652289";
-const char* kDatabasePassword= "yzmond.1652289";
+const char* kDatabaseName = "yzmon_1551713";
+const char* kDatabaseUserId= "dbuser_1551713";
+const char* kDatabasePassword= "yzmond.1551713";
 
 extern Options opt;
 int global_number = 0;
@@ -134,12 +134,12 @@ bool DatabaseConnection::OnRecvAuthResponse(Packet packet, Client* client) {
 	if(*mysql_error(this->MysqlHandler))
 	{
 	    // an error occurred
-		LERR << "ÑéÖ¤°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÑéÖ¤°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;	  
 	}
 	else {
-		LDB << "ÊÕµ½ÑéÖ¤°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -164,12 +164,12 @@ bool DatabaseConnection::OnRecvSysInfoResponse(Packet packet, const Client &clie
 	delete (SysInfoResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "ÏµÍ³ÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÏµÍ³ÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ÏµÍ³ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ÏµÍ³ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½ÏµÍ³ÐÅÏ¢°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ÏµÍ³ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -189,12 +189,12 @@ bool DatabaseConnection::OnRecvConfInfoResponse(Packet packet, const Client &cli
 	delete (ConfInfoResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "ÅäÖÃÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÅäÖÃÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½ÅäÖÃÐÅÏ¢°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -214,12 +214,12 @@ bool DatabaseConnection::OnRecvProcInfoResponse(Packet packet, const Client &cli
 
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "½ø³ÌÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "½ø³ÌÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½½ø³ÌÐÅÏ¢°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -260,8 +260,8 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, const Client &cl
 	command << std::dec;
 	command << "devstate_base_eth" << ethernet_num << "_state = " << (packet_struct.state == 0x0001 ? "'UP'" : "'DOWN'") << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_speed = " << ((packet_struct.options & 0x0001) == 0x0001 ? "'100MB'" : "'10MB'") << ", ";
-	command << "devstate_base_eth" << ethernet_num << "_duplex = " << ((packet_struct.options & 0x0002) == 0x0002 ? "'È«Ë«¹¤'" : "'°ëË«¹¤'") << ", ";
-	command << "devstate_base_eth" << ethernet_num << "_autonego = " << ((packet_struct.options & 0x0004) == 0x0004 ? "'ÊÇ'" : "'·ñ'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_duplex = " << ((packet_struct.options & 0x0002) == 0x0002 ? "'È«Ë«ï¿½ï¿½'" : "'ï¿½ï¿½Ë«ï¿½ï¿½'") << ", ";
+	command << "devstate_base_eth" << ethernet_num << "_autonego = " << ((packet_struct.options & 0x0004) == 0x0004 ? "'ï¿½ï¿½'" : "'ï¿½ï¿½'") << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_txbytes = " << to_string(packet_struct.send_bytes) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_txpackets = " << to_string(packet_struct.send_packets) << ", ";
 	command << "devstate_base_eth" << ethernet_num << "_rxbytes = " << to_string(packet_struct.recv_bytes) << ", ";
@@ -272,12 +272,12 @@ bool DatabaseConnection::OnRecvEtherInfoResponse(Packet packet, const Client &cl
 
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "ÒÔÌ«Íø°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÒÔÌ«Íø°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½ï¿½Ì«ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½ï¿½Ì«ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½ÒÔÌ«Íø°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½ï¿½Ì«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -290,19 +290,19 @@ bool DatabaseConnection::OnRecvUsbStateResponse(Packet packet, const Client &cli
 
 	std::stringstream command;
 	command << "update devstate_base set devstate_base_usbstate = '";
-	command << (packet_struct.usb_is_inserted == 1 ? "ÒÑ²åÈë" : "Î´²åÈë") << "'";
+	command << (packet_struct.usb_is_inserted == 1 ? "ï¿½Ñ²ï¿½ï¿½ï¿½" : "Î´ï¿½ï¿½ï¿½ï¿½") << "'";
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
 	delete (USBStateResponsePacket*)packet.payload.first;
 
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "USB¿ÚÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "USB¿ÚÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "USBï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "USBï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½USB¿ÚÐÅÏ¢°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½USBï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -320,12 +320,12 @@ bool DatabaseConnection::OnRecvUsbInfoResponse(Packet packet, const Client &clie
 
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "UÅÌÎÄ¼þÁÐ±íÐÅÏ¢Ð´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "UÅÌÎÄ¼þÁÐ±íÐÅÏ¢Ð´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "Uï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ð±ï¿½ï¿½ï¿½Ï¢Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "Uï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ð±ï¿½ï¿½ï¿½Ï¢Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½UÅÌÎÄ¼þÁÐ±íÐÅÏ¢£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½Uï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ð±ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -342,17 +342,17 @@ bool DatabaseConnection::OnRecvPrintDevResponse(Packet packet, const Client &cli
 	command << s << "'";
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 	command << "update devstate_base set devstate_base_prnstate = '";
-	command << (packet_struct.print_is_usable == 1 ? "ÒÑÆô¶¯" : "Î´Æô¶¯") << "'";
+	command << (packet_struct.print_is_usable == 1 ? "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" : "Î´ï¿½ï¿½ï¿½ï¿½") << "'";
 	command << " where devstate_base_devid = " << client.devid << " and devstate_base_devno = " << client.devno;
 
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "´òÓ¡¿ÚÐÅÏ¢Ð´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "´òÓ¡¿ÚÐÅÏ¢Ð´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½Ï¢Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½Ï¢Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½´òÓ¡¿ÚÐÅÏ¢£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -370,12 +370,12 @@ bool DatabaseConnection::OnRecvPrintQueueResponse(Packet packet, const Client &c
 
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "´òÓ¡¶ÓÁÐÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "´òÓ¡¶ÓÁÐÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½´òÓ¡¶ÓÁÐ£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -394,12 +394,12 @@ bool DatabaseConnection::OnRecvTermResponse(Packet packet, Client &client) {
 	delete (TerInfoResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "ÖÕ¶Ë·þÎñÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÖÕ¶Ë·þÎñÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½Õ¶Ë·ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½Õ¶Ë·ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½ÖÕ¶Ë·þÎñÐÅÏ¢°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½Õ¶Ë·ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -432,12 +432,12 @@ bool DatabaseConnection::OnRecvIPTermResponse(Packet packet, Client &client) {
 	// delete (IPTermResponsePacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "ÖÕ¶ËÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÖÕ¶ËÐÅÏ¢°üÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½Õ¶ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½Õ¶ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½ÖÕ¶ËÐÅÏ¢°ü£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½Õ¶ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -482,12 +482,12 @@ bool DatabaseConnection::OnRecvScreenInfoPacket(Packet packet, const Client &cli
 	delete (ScreenInfoPacket*)packet.payload.first;
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "ÐéÆÁÐÅÏ¢Ð´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÐéÆÁÐÅÏ¢Ð´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½ÐéÆÁÐÅÏ¢£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
@@ -503,12 +503,12 @@ bool DatabaseConnection::UpdateTTYConnected(const Client &client) {
 
 	result = MysqlExecCommand(command.str());
 	if(*mysql_error(this->MysqlHandler)) {
-		LERR << "ÖÕ¶Ë×ÜÊýÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
-		LDB << "ÖÕ¶Ë×ÜÊýÐ´ÈëÊý¾Ý¿âÊ§°Ü" << endl;
+		LERR << "ï¿½Õ¶ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
+		LDB << "ï¿½Õ¶ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ê§ï¿½ï¿½" << endl;
 		return false;
 	}
 	else {
-		LDB << "ÊÕµ½ÖÕ¶Ë×ÜÊý£¬ÒÑÑéÖ¤²¢Ð´ÈëÊý¾Ý¿â" << std::endl;
+		LDB << "ï¿½Õµï¿½ï¿½Õ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½" << std::endl;
 		return true;
 	}
 }
