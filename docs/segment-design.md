@@ -1,8 +1,8 @@
-## Packet Design
+## Segment Design
 
 Client:
 
-|     PacketType     | Descriptor |
+|    SEGMENT TYPE    | DESCRIPTOR |
 | :----------------: | :--------: |
 |   VersionRequire   |    0x00    |
 |    AuthRequest     |    0x01    |
@@ -31,7 +31,7 @@ Client:
 |   IPTermResponse   |    0x0B    |
 |        End         |    0xFF    |
 
-### Encrypt
+### Encryption
 
 (116 bytes in total)
 
@@ -39,7 +39,7 @@ Client:
 2. Encrypt and replace: 8 - 112 bytes
 3. Host to Network: 112 - 116 bytes
 
-### Decrypt
+### Decryption
 
 1. Network to Host: 112 - 116 bytes
 2. Decrypt and replace: 8 - 112 bytes
