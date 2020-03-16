@@ -49,7 +49,7 @@ make
 1. The Client is written in C/C++, with **forking method** (one process one socket). Each forked child emulates a `devid` to connect to the main server, and do all the work of data transmission.
 2. The main process of the Client records the initial time, then fork childs to emulate data transmission. After the transmission ends, the main process recycles all child processes and records the ending time. The duration of the whole Client work is written into the log.
 3. Each child process is designed based on the OSI module. For the convenience and compactness of the child process, all OSI layers are combined together.
-4. Children process read configurations from [ts.conf](client/ts.conf) (in Simplified Chinese), read data payload to be transmitted from [config.dat](client/config.dat), [process.dat](client/process.dat) and [usbfiles.dat](client/usbfles.dat). The detailed transmission protocol design can be seen [here](docs/transmission-protocol-design.md).
+4. Children process read configurations from [ts.conf](client/ts.conf) (in Simplified Chinese), read data payload to be transmitted from [config.dat](client/config.dat), [process.dat](client/process.dat) and [usbfiles.dat](client/usbfiles.dat). The detailed transmission protocol design can be seen [here](docs/transmission-protocol-design.md).
 5. To have a safe and efficient TCP sending, each TCP connection is arranged a writting circular queue, with a safe length (102400 bytes).
 6. Each child process write into the `ts_count.xls` for a line, including:
 
