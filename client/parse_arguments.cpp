@@ -3,7 +3,7 @@
 using namespace std;
 
 void print_help() {
-	std::cout << "Ê¹ÓÃ·½·¨£º" << "./ts <³õÊ¼devid£¬±ØÐë9Î»> <×Ó½ø³ÌÊý£¨1-50000£©>" << std::endl;
+	std::cout << "Ê¹ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½" << "./ts <ï¿½ï¿½Ê¼devidï¿½ï¿½ï¿½ï¿½ï¿½ï¿½9Î»> <ï¿½Ó½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1-50000ï¿½ï¿½>" << std::endl;
 }
 
 bool is_empty_or_comment(string &s) {
@@ -43,37 +43,3 @@ Options parse_arguments(ifstream &ifs, bool is_client) {
 
 	return opts;
 }
-
-
-
-//////////////////////////////      test      ///////////////////////////
-// Options get_test_arguments() {
-// 	Options opts;
-// 	return opts;
-// }
-
-// Options test(bool is_client, bool is_clean) {
-// 	string fn_conf = is_client ? kFnConfClient : kFnConfServer;
-// 	fn_conf = (is_clean ? "clean_" : "disordered_") + fn_conf;
-// 	ifstream ifs(fn_conf);
-
-// 	Options opt = parse_arguments(ifs, is_client);
-// 	// print opt
-// 	cout << "========= opt ==========\n"
-// 		<< "size: " << opt.size() << endl;
-// 	for (auto it = opt.begin(); it != opt.end(); it++) {
-// 		cout << "k: " << it->first << endl
-// 		       	<< "v: " << it->second << endl << endl;
-// 	}
-// 	return opt;
-// }
-
-// int main(int argc, char *argv[]) {
-// 	cout << argv[1] << " " << argv[2] << endl;
-// 	bool is_client = strncmp("client", argv[1], 6) == 0;
-// 	bool is_clean  = strncmp("clean", argv[2], 5) == 0;
-// 	cout << "is_client: " << boolalpha << is_client << endl
-// 	       << "is_clean: " << is_clean << endl << endl;
-
-// 	test(is_client, is_clean);
-// }
